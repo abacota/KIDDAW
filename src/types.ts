@@ -1,8 +1,8 @@
 export interface TrackFX {
-  reverb: number; // 0 to 1
-  delay: number; // 0 to 1
-  bitcrusher: number; // 0 to 1
-  filter: number; // 0.01 to 1 (cutoff representation)
+  reverb: number;
+  delay: number;
+  bitcrusher: number;
+  filter: number;
 }
 
 export interface Track {
@@ -10,7 +10,7 @@ export interface Track {
   name: string;
   type: 'drum-machine' | 'midi-instrument' | 'audio' | 'sampler';
   color: string;
-  volume: number; // in dB (-60 to 6)
+  volume: number;
   muted: boolean;
   soloed: boolean;
   instrumentId?: 'piano' | 'synth' | 'guitar' | 'chiptune' | 'glockenspiel';
@@ -19,17 +19,17 @@ export interface Track {
 
 export interface Note {
   id: string;
-  pitch: string; // e.g. "C4", "E4"
-  start: number; // sixteenth notes from clip start
-  duration: number; // sixteenth notes
-  velocity?: number; // 0 to 1
+  pitch: string;
+  start: number;
+  duration: number;
+  velocity?: number;
 }
 
 export interface DrumHit {
   id: string;
-  pitch: string; // "C1", "D1", "E1", "F1", "G1"
-  start: number; // sixteenth notes from clip start
-  duration: number; // reference
+  pitch: string;
+  start: number;
+  duration: number;
   velocity?: number;
 }
 
@@ -37,10 +37,10 @@ export interface Clip {
   id: string;
   trackId: string;
   type: 'drum-machine' | 'midi-instrument' | 'audio';
-  startTime: number; // sixteenth notes from timeline start
-  duration: number; // sixteenth notes length
+  startTime: number;
+  duration: number;
   notes: Note[] | DrumHit[];
-  audioUrl?: string; // for audio tracks
+  audioUrl?: string;
 }
 
 export interface Instrument {
@@ -48,6 +48,20 @@ export interface Instrument {
   name: string;
   description: string;
   color: string;
-  iconName: string; // string key for lucide icon selection
-  themeClass: string; // css styling key for keyboard editor decoration
+  iconName: string;
+  themeClass: string;
+}
+
+export interface StudentProfile {
+  name: string;
+  createdAt: number;
+}
+
+export interface PersistedProject {
+  version: string;
+  studentName: string;
+  tracks: Track[];
+  clips: Clip[];
+  bpm: number;
+  savedAt: number;
 }

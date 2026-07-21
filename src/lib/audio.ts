@@ -1,349 +1,303 @@
 import * as Tone from 'tone';
 
-// Type definitions for audio state
 export interface SynthesizedTrackChannel {
-  source: any; // Tone.PolySynth, Tone.NoiseSynth, etc.
-  filterId: Tone.Filter;
+  source: any;
+  filter: Tone.Filter;
   crusher: Tone.BitCrusher;
   delay: Tone.FeedbackDelay;
   reverb: Tone.Reverb;
   volume: Tone.Volume;
+  extras?: Tone.ToneAudioNode[];
+  trackType: string;
+  instrumentId?: string;
 }
 
-// Global active channels map: trackId -> SynthesizedTrackChannel
-const activeChannels: { [trackId: string]: SynthesizedTrackChannel } = {};
+const activeChannels: Record<string, SynthesizedTrackChannel> = {};
 
-// Singleton audio destination setup flag
-let isInitialized = false;
-
-// Create and initialize the master effect chain for a track
-export function setupTrackAudioChannel(trackId: string, trackType: string, instrumentId?: string) {
-  // Clear existing nodes if re-setting
-  if (activeChannels[trackId]) {
-    try {
-      activeChannels[trackId].source.disconnect();
-      activeChannels[trackId].filterId.disconnect();
-      activeChannels[trackId].crusher.disconnect();
-      activeChannels[trackId].delay.disconnect();
-      activeChannels[trackId].reverb.disconnect();
-      activeChannels[trackId].volume.disconnect();
-    } catch (err) {
-      console.warn("Error cleaning up audio nodes:", err);
-    }
+function createInstrumentSource(instrumentId: string): Tone.PolySynth {
+  switch (instrumentId) {
+    case 'synth':
+      return new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'sawtooth' },
+        envelope: { attack: 0.04, decay: 0.3, sustain: 0.6, release: 0.4 },
+      });
+    case 'guitar':
+      return new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'triangle' },
+        envelope: { attack: 0.005, decay: 1.8, sustain: 0.0, release: 1.0 },
+      });
+    case 'chiptune':
+      return new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'square' },
+        envelope: { attack: 0, decay: 0.15, sustain: 0.1, release: 0.15 },
+      });
+    case 'glockenspiel':
+      return new Tone.PolySynth(Tone.FMSynth as any, {
+        harmonicity: 3.1, modulationIndex: 12,
+        oscillator: { type: 'sine' },
+        envelope: { attack: 0.002, decay: 0.4, sustain: 0, release: 0.4 },
+        modulation: { type: 'sine' },
+        modulationEnvelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.2 },
+      } as any);
+    case 'piano':
+    default:
+      return new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'fmtriangle' as any },
+        envelope: { attack: 0.012, decay: 1.5, sustain: 0.25, release: 0.8 },
+      });
   }
+}
 
-  // Create FX nodes
-  const filterId = new Tone.Filter({
-    type: "lowpass",
-    frequency: 20000,
-    Q: 1
-  });
+function disposeChannel(ch: SynthesizedTrackChannel) {
+  try {
+    ch.source?.dispose?.();
+    ch.filter?.dispose?.();
+    ch.crusher?.dispose?.();
+    ch.delay?.dispose?.();
+    ch.reverb?.dispose?.();
+    ch.volume?.dispose?.();
+    ch.extras?.forEach(n => { try { n.dispose?.(); } catch { /* */ } });
+  } catch (err) { console.warn('Error disposing audio channel', err); }
+}
 
+export function setupTrackAudioChannel(
+  trackId: string,
+  trackType: string,
+  instrumentId?: string
+): SynthesizedTrackChannel {
+  const existing = activeChannels[trackId];
+  if (existing && existing.trackType === trackType && existing.instrumentId === instrumentId) {
+    return existing;
+  }
+  if (existing) { disposeChannel(existing); delete activeChannels[trackId]; }
+
+  const filter  = new Tone.Filter({ type: 'lowpass', frequency: 20000, Q: 1 });
   const crusher = new Tone.BitCrusher(8);
   crusher.wet.value = 0;
-
-  const delay = new Tone.FeedbackDelay({
-    delayTime: "4n",
-    feedback: 0.3,
-    wet: 0
-  });
-
-  const reverb = new Tone.Reverb({
-    decay: 2.5
-  });
-  reverb.wet.value = 0;
-  // Pre-warm the reverb so it doesn't click on first use
-  reverb.generate();
-
-  const volume = new Tone.Volume(0);
+  const delay   = new Tone.FeedbackDelay({ delayTime: '8n', feedback: 0.25, wet: 0 });
+  const reverb  = new Tone.Reverb({ decay: 2.5, wet: 0 });
+  void reverb.generate();
+  const volume  = new Tone.Volume(0);
 
   let source: any;
+  const extras: Tone.ToneAudioNode[] = [];
 
   if (trackType === 'drum-machine') {
-    // Drum machine relies on key triggers, we can use a helper trigger object or a multi-synthesizer
-    // We instantiate a synthetic instrument capable of triggering the 5 drum sounds
     source = new Tone.MonoSynth({
-      oscillator: { type: "sine" },
-      envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 }
+      oscillator: { type: 'sine' },
+      envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 0.05 },
     });
-  } else if (trackType === 'audio' || trackType === 'sampler') {
-    // Microphone sampler/recording source
-    source = new Tone.Sampler({
-      urls: { C4: "" },
-      release: 1
+
+    const kick = new Tone.MembraneSynth({
+      pitchDecay: 0.08, octaves: 5,
+      oscillator: { type: 'sine' },
+      envelope: { attack: 0.001, decay: 0.16, sustain: 0, release: 0.15 },
     });
+    kick.volume.value = 4;
+
+    const snareFilter = new Tone.Filter({ type: 'bandpass', frequency: 1800, Q: 1.5 });
+    const snare = new Tone.NoiseSynth({
+      noise: { type: 'pink' },
+      envelope: { attack: 0.001, decay: 0.12, sustain: 0, release: 0.1 },
+    });
+    snare.volume.value = 2;
+    snare.connect(snareFilter);
+
+    const hatFilter = new Tone.Filter({ type: 'highpass', frequency: 7000, Q: 0.5 });
+    const hat = new Tone.NoiseSynth({
+      noise: { type: 'white' },
+      envelope: { attack: 0.001, decay: 0.04, sustain: 0, release: 0.03 },
+    });
+    hat.volume.value = -6;
+    hat.connect(hatFilter);
+
+    const clapFilter = new Tone.Filter({ type: 'bandpass', frequency: 2200, Q: 1.2 });
+    const clap = new Tone.NoiseSynth({
+      noise: { type: 'white' },
+      envelope: { attack: 0.001, decay: 0.08, sustain: 0, release: 0.06 },
+    });
+    clap.volume.value = 3;
+    clap.connect(clapFilter);
+
+    const tom = new Tone.MembraneSynth({
+      pitchDecay: 0.12, octaves: 3,
+      oscillator: { type: 'triangle' },
+      envelope: { attack: 0.005, decay: 0.22, sustain: 0, release: 0.2 },
+    });
+
+    [kick, snareFilter, hatFilter, clapFilter, tom].forEach(n => {
+      n.connect(filter);
+      extras.push(n);
+    });
+    extras.push(snare, hat, clap);
+    (source as any).__drums = { kick, snare, hat, clap, tom };
   } else {
-    // MIDI Virtual Instrument Selection
-    const inst = instrumentId || 'piano';
-    if (inst === 'piano') {
-      source = new Tone.PolySynth(Tone.Synth, {
-        oscillator: { type: "fmtriangle" },
-        envelope: {
-          attack: 0.012,
-          decay: 1.5,
-          sustain: 0.25,
-          release: 0.8
-        }
-      });
-      // Give soft lowpass filter sweep characteristic to piano
-      source.set({
-        filter: {
-          frequency: 1500,
-          type: "lowpass"
-        }
-      });
-    } else if (inst === 'synth') {
-      source = new Tone.PolySynth(Tone.Synth, {
-        oscillator: { type: "sawtooth" },
-        envelope: {
-          attack: 0.04,
-          decay: 0.3,
-          sustain: 0.6,
-          release: 0.4
-        }
-      });
-    } else if (inst === 'guitar') {
-      // Custom pluck physical string model settings
-      source = new Tone.PolySynth(Tone.Synth, {
-        oscillator: { type: "triangle" },
-        envelope: {
-          attack: 0.005,
-          decay: 1.8,
-          sustain: 0.0,
-          release: 1.0
-        }
-      });
-    } else if (inst === 'chiptune') {
-      // 8-Bit square wave
-      source = new Tone.PolySynth(Tone.Synth, {
-        oscillator: { type: "square" },
-        envelope: {
-          attack: 0,
-          decay: 0.15,
-          sustain: 0.1,
-          release: 0.15
-        }
-      });
-    } else if (inst === 'glockenspiel') {
-      // High metal chime
-      source = new Tone.PolySynth(Tone.FMSynth, {
-        harmonicity: 3.1,
-        modulationIndex: 12,
-        oscillator: { type: "sine" },
-        envelope: {
-          attack: 0.002,
-          decay: 0.4,
-          sustain: 0,
-          release: 0.4
-        },
-        modulation: { type: "sine" },
-        modulationEnvelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.2 }
-      });
-    }
+    source = createInstrumentSource(instrumentId || 'piano');
   }
 
-  // FX Connection Chain: Source -> Filter -> Crusher -> Delay -> Reverb -> Volume -> Destination
-  source.chain(filterId, crusher, delay, reverb, volume, Tone.getDestination());
+  source.chain(filter, crusher, delay, reverb, volume, Tone.getDestination());
 
-  activeChannels[trackId] = {
-    source,
-    filterId,
-    crusher,
-    delay,
-    reverb,
-    volume
-  };
-
+  activeChannels[trackId] = { source, filter, crusher, delay, reverb, volume, extras, trackType, instrumentId };
   return activeChannels[trackId];
 }
 
-// Update parameters for an active track's FX chain
-export function updateTrackAudioFX(trackId: string, fxType: 'reverb' | 'delay' | 'bitcrusher' | 'filter', value: number) {
-  const channel = activeChannels[trackId];
-  if (!channel) return;
+export function disposeTrackChannel(trackId: string) {
+  if (activeChannels[trackId]) { disposeChannel(activeChannels[trackId]); delete activeChannels[trackId]; }
+}
 
+export function getTrackChannel(trackId: string) {
+  return activeChannels[trackId];
+}
+
+export function updateTrackAudioFX(
+  trackId: string,
+  fxType: 'reverb' | 'delay' | 'bitcrusher' | 'filter',
+  value: number
+) {
+  const ch = activeChannels[trackId];
+  if (!ch) return;
   switch (fxType) {
-    case 'reverb':
-      // Map 0-1 to wet control
-      channel.reverb.wet.value = value;
+    case 'reverb':     ch.reverb.wet.rampTo(Math.max(0, Math.min(1, value)), 0.05); break;
+    case 'delay':      ch.delay.wet.rampTo(Math.max(0, Math.min(1, value)), 0.05); break;
+    case 'bitcrusher': {
+      const v = Math.max(0, Math.min(1, value));
+      ch.crusher.wet.value = v > 0.03 ? 1 : 0;
+      ch.crusher.bits.value = Math.max(3, Math.round(16 - v * 12));
       break;
-    case 'delay':
-      // Map 0-1 to wet control
-      channel.delay.wet.value = value;
+    }
+    case 'filter': {
+      const v = Math.max(0.01, Math.min(1, value));
+      ch.filter.frequency.rampTo(80 + Math.pow(v, 2.2) * 19920, 0.05);
       break;
-    case 'bitcrusher':
-      // Map 0-1 to wet and scale bits
-      channel.crusher.wet.value = value > 0.05 ? 1 : 0;
-      // Interpolate bits from 16 down to 4 based on fx level
-      const bits = Math.max(3, Math.round(16 - (value * 12)));
-      channel.crusher.bits.value = bits;
-      break;
-    case 'filter':
-      // Map 0-1 cutoff frequency exponentially (50Hz to 20,000Hz)
-      const freq = Math.round(50 + (Math.pow(value, 2.5) * 19950));
-      channel.filterId.frequency.setValueAtTime(freq, Tone.now());
-      break;
+    }
   }
 }
 
-// Update track volume dynamically
 export function updateTrackVolume(trackId: string, dBVal: number) {
-  const channel = activeChannels[trackId];
-  if (channel) {
-    channel.volume.volume.setValueAtTime(dBVal, Tone.now());
-  }
+  const ch = activeChannels[trackId];
+  if (!ch) return;
+  if (!isFinite(dBVal) || dBVal < -60) { ch.volume.mute = true; }
+  else { ch.volume.mute = false; ch.volume.volume.rampTo(dBVal, 0.05); }
 }
 
-// Play a note for a MIDI-instrument track
-export function triggerTrackNote(trackId: string, pitch: string, durationInSec: number = 0.5, time: number = Tone.now()) {
-  const channel = activeChannels[trackId];
-  if (!channel || !channel.source) return;
-
+export function triggerTrackNote(
+  trackId: string,
+  pitch: string,
+  durationInSec: number = 0.5,
+  time?: number,
+  velocity: number = 0.8
+) {
+  const ch = activeChannels[trackId];
+  if (!ch?.source?.triggerAttackRelease) return;
   try {
-    if (channel.source.triggerAttackRelease) {
-      // Ensure the velocity parameter is set to standard (0.8)
-      channel.source.triggerAttackRelease(pitch, durationInSec, time, 0.8);
-    }
-  } catch (err) {
-    console.error(`Failed to trigger note ${pitch} on track ${trackId}:`, err);
-  }
+    ch.source.triggerAttackRelease(pitch, Math.max(0.05, durationInSec), time ?? Tone.now(), velocity);
+  } catch (err) { console.warn(`Note fail ${pitch} on ${trackId}`, err); }
 }
 
-// Drum Synthesizers (100% offline, fully synthesized)
-let kickSynth: Tone.MembraneSynth | null = null;
-let snareNoise: Tone.NoiseSynth | null = null;
-let snareFilter: Tone.Filter | null = null;
-let hihatNoise: Tone.NoiseSynth | null = null;
-let hihatFilter: Tone.Filter | null = null;
-let tomSynth: Tone.MembraneSynth | null = null;
-
-// Synthesize a beautiful clapped transient with multi-envelope
-function setupDrumSynths() {
-  if (kickSynth) return;
-
-  kickSynth = new Tone.MembraneSynth({
-    pitchDecay: 0.08,
-    octaves: 5,
-    oscillator: { type: "sine" },
-    envelope: { attack: 0.001, decay: 0.16, sustain: 0, release: 0.15 }
-  }).toDestination();
-  kickSynth.volume.value = 6;
-
-  snareFilter = new Tone.Filter({ type: "bandpass", frequency: 1200, Q: 2 }).toDestination();
-  snareNoise = new Tone.NoiseSynth({
-    noise: { type: "pink" },
-    envelope: { attack: 0.002, decay: 0.14, sustain: 0, release: 0.14 }
-  }).connect(snareFilter);
-  snareNoise.volume.value = 5;
-
-  hihatFilter = new Tone.Filter({ type: "highpass", frequency: 8000, Q: 0.5 }).toDestination();
-  hihatNoise = new Tone.NoiseSynth({
-    noise: { type: "white" },
-    envelope: { attack: 0.001, decay: 0.04, sustain: 0, release: 0.04 }
-  }).connect(hihatFilter);
-  hihatNoise.volume.value = -3;
-
-  tomSynth = new Tone.MembraneSynth({
-    pitchDecay: 0.15,
-    octaves: 3,
-    oscillator: { type: "triangle" },
-    envelope: { attack: 0.005, decay: 0.25, sustain: 0, release: 0.25 }
-  }).toDestination();
-}
-
-// Trigger organic synthesized drums
-export function triggerDrumSound(pitch: string, time: number = Tone.now()) {
-  setupDrumSynths();
-  
+export function triggerDrumSound(pitch: string, time?: number, trackId?: string) {
+  const t = time ?? Tone.now();
   try {
-    switch (pitch) {
-      case 'C1': // Kick
-        kickSynth?.triggerAttackRelease("C1", "8n", time);
-        break;
-      case 'D1': // Snare
-        snareNoise?.triggerAttack(time);
-        break;
-      case 'E1': // Hi-Hat
-        hihatNoise?.triggerAttack(time);
-        break;
-      case 'F1': // Clap (Multi-transient synthetic clap)
-        // Simulate a rapid hand clap series of impulses
-        hihatNoise?.triggerAttack(time);
-        hihatNoise?.triggerAttack(time + 0.015);
-        snareNoise?.triggerAttack(time + 0.03);
-        break;
-      case 'G1': // Tom
-        tomSynth?.triggerAttackRelease("G2", "4n", time);
-        break;
+    if (trackId && activeChannels[trackId]) {
+      const drums = (activeChannels[trackId].source as any)?.__drums;
+      if (drums) { fireDrum(drums, pitch, t); return; }
     }
-  } catch (err) {
-    console.warn("Drum trigger error:", err);
+    ensureSharedDrums();
+    fireDrum({ kick: sharedKick, snare: sharedSnare, hat: sharedHat, clap: sharedClap, tom: sharedTom }, pitch, t);
+  } catch (err) { console.warn('Drum trigger error', err); }
+}
+
+function fireDrum(drums: any, pitch: string, t: number) {
+  switch (pitch) {
+    case 'C1': drums.kick?.triggerAttackRelease('C1', '8n', t); break;
+    case 'D1': drums.snare?.triggerAttack(t); break;
+    case 'E1': drums.hat?.triggerAttack(t); break;
+    case 'F1':
+      drums.clap?.triggerAttack(t);
+      drums.clap?.triggerAttack(t + 0.012);
+      drums.clap?.triggerAttack(t + 0.028);
+      break;
+    case 'G1': drums.tom?.triggerAttackRelease('G2', '8n', t); break;
   }
 }
 
-// Setup a micro-synth for user live keyboards previewing
+let sharedKick: Tone.MembraneSynth | null = null;
+let sharedSnare: Tone.NoiseSynth | null = null;
+let sharedHat: Tone.NoiseSynth | null = null;
+let sharedClap: Tone.NoiseSynth | null = null;
+let sharedTom: Tone.MembraneSynth | null = null;
+
+function ensureSharedDrums() {
+  if (sharedKick) return;
+  sharedKick = new Tone.MembraneSynth({
+    pitchDecay: 0.08, octaves: 5,
+    oscillator: { type: 'sine' },
+    envelope: { attack: 0.001, decay: 0.16, sustain: 0, release: 0.15 },
+  }).toDestination();
+  sharedKick.volume.value = 4;
+
+  const snF = new Tone.Filter({ type: 'bandpass', frequency: 1800, Q: 1.5 }).toDestination();
+  sharedSnare = new Tone.NoiseSynth({
+    noise: { type: 'pink' },
+    envelope: { attack: 0.001, decay: 0.12, sustain: 0, release: 0.1 },
+  }).connect(snF);
+  sharedSnare.volume.value = 2;
+
+  const hF = new Tone.Filter({ type: 'highpass', frequency: 7000 }).toDestination();
+  sharedHat = new Tone.NoiseSynth({
+    noise: { type: 'white' },
+    envelope: { attack: 0.001, decay: 0.04, sustain: 0, release: 0.03 },
+  }).connect(hF);
+  sharedHat.volume.value = -6;
+
+  const cF = new Tone.Filter({ type: 'bandpass', frequency: 2200, Q: 1.2 }).toDestination();
+  sharedClap = new Tone.NoiseSynth({
+    noise: { type: 'white' },
+    envelope: { attack: 0.001, decay: 0.08, sustain: 0, release: 0.06 },
+  }).connect(cF);
+  sharedClap.volume.value = 3;
+
+  sharedTom = new Tone.MembraneSynth({
+    pitchDecay: 0.12, octaves: 3,
+    oscillator: { type: 'triangle' },
+    envelope: { attack: 0.005, decay: 0.22, sustain: 0, release: 0.2 },
+  }).toDestination();
+}
+
 let previewSynth: Tone.PolySynth | null = null;
-let currentPreviewInstrument: string = 'piano';
+let previewInstrument = '';
 
 export function playLiveInstrumentNote(pitch: string, instrumentId: string) {
-  setupDrumSynths(); // Warm up the drums
-  
-  // Clean up if the instrument changed
-  if (previewSynth && currentPreviewInstrument !== instrumentId) {
-    previewSynth.dispose();
+  if (previewSynth && previewInstrument !== instrumentId) {
+    try { previewSynth.dispose(); } catch { /* */ }
     previewSynth = null;
   }
-
   if (!previewSynth) {
-    currentPreviewInstrument = instrumentId;
-    if (instrumentId === 'piano') {
-      previewSynth = new Tone.PolySynth(Tone.Synth, {
-        oscillator: { type: "fmtriangle" },
-        envelope: { attack: 0.01, decay: 1.2, sustain: 0.2, release: 0.5 }
-      }).toDestination();
-    } else if (instrumentId === 'synth') {
-      previewSynth = new Tone.PolySynth(Tone.Synth, {
-        oscillator: { type: "sawtooth" },
-        envelope: { attack: 0.02, decay: 0.2, sustain: 0.5, release: 0.3 }
-      }).toDestination();
-    } else if (instrumentId === 'guitar') {
-      previewSynth = new Tone.PolySynth(Tone.Synth, {
-        oscillator: { type: "triangle" },
-        envelope: { attack: 0.005, decay: 1.5, sustain: 0, release: 0.6 }
-      }).toDestination();
-    } else if (instrumentId === 'chiptune') {
-      previewSynth = new Tone.PolySynth(Tone.Synth, {
-        oscillator: { type: "square" },
-        envelope: { attack: 0, decay: 0.1, sustain: 0.1, release: 0.1 }
-      }).toDestination();
-    } else { // glockenspiel
-      previewSynth = new Tone.PolySynth(Tone.FMSynth, {
-        harmonicity: 3.1,
-        modulationIndex: 8,
-        oscillator: { type: "sine" },
-        envelope: { attack: 0.002, decay: 0.4, sustain: 0, release: 0.3 }
-      }).toDestination();
-    }
+    previewInstrument = instrumentId;
+    previewSynth = createInstrumentSource(instrumentId);
+    previewSynth.toDestination();
+    previewSynth.volume.value = -4;
   }
-
-  try {
-    previewSynth.triggerAttackRelease(pitch, "4n");
-  } catch (err) {
-    console.warn("Error playing live note:", err);
-  }
+  try { previewSynth.triggerAttackRelease(pitch, '8n'); }
+  catch (err) { console.warn('Live note error', err); }
 }
 
-// Micro Recorder helper for recording sampler vocals
-let mediaRecorder: MediaRecorder | null = null;
-let recordedAudioChunks: Blob[] = [];
+let metroSynth: Tone.MembraneSynth | null = null;
+
+export function triggerMetronomeClick(isDownbeat: boolean, time?: number) {
+  if (!metroSynth) {
+    metroSynth = new Tone.MembraneSynth({
+      pitchDecay: 0.01, octaves: 2,
+      envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.05 },
+    }).toDestination();
+    metroSynth.volume.value = -10;
+  }
+  metroSynth.triggerAttackRelease(isDownbeat ? 'C5' : 'G4', '32n', time ?? Tone.now());
+}
 
 export async function askMicPermission(): Promise<boolean> {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    stream.getTracks().forEach(t => t.stop()); // Instantly release it
+    stream.getTracks().forEach(t => t.stop());
     return true;
-  } catch (err) {
-    console.warn("Microphone access denied:", err);
-    return false;
-  }
+  } catch { return false; }
 }
