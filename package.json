@@ -15,7 +15,9 @@
     "tone": "^14.7.77",
     "motion": "^11.11.17",
     "lucide-react": "^0.468.0",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^2.5.4"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
