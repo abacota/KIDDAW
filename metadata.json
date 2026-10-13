@@ -1,6 +1,0 @@
-{
-  "name": "KIDDAW Live",
-  "description": "A colorful, professional digital audio workstation for kids with a fun instrument library, voice recorder, and arrangement editing!",
-  "requestFramePermissions": ["microphone"],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

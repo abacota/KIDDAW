@@ -1,33 +1,29 @@
 {
   "name": "kiddaw",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0 --port 3000",
-    "build": "tsc && vite build",
-    "lint": "tsc --noEmit",
+    "dev": "vite --port 3000",
+    "test": "vitest run",
+    "check": "tsc --noEmit && vitest run && vite build && node scripts/check-words.mjs",
+    "build": "npm run check",
     "preview": "vite preview"
   },
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "tone": "^14.7.77",
-    "motion": "^11.11.17",
-    "lucide-react": "^0.468.0",
-    "uuid": "^9.0.1",
-    "clsx": "^2.1.1",
-    "tailwind-merge": "^2.5.4"
+    "tone": "^15.1.22"
   },
   "devDependencies": {
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "@types/uuid": "^9.0.8",
-    "@vitejs/plugin-react": "^4.3.3",
-    "typescript": "^5.6.3",
-    "vite": "^5.4.10",
-    "autoprefixer": "^10.4.20",
-    "postcss": "^8.4.47",
-    "tailwindcss": "^3.4.14"
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.7.0",
+    "autoprefixer": "^10.6.1",
+    "postcss": "^8.5.30",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.4",
+    "vitest": "^3.2.7"
   }
 }

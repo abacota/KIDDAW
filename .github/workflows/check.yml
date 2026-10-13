@@ -1,0 +1,19 @@
+# The automatic check: runs on every save to GitHub.
+# A red X on GitHub means something is broken; nothing reaches students until it's fixed.
+name: Check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check

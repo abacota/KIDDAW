@@ -1,0 +1,64 @@
+# KIDDAW ladders and levels
+#
+# You can change this file without touching any code.
+#
+# Each element of music has a ladder of steps, lowest first.
+# Each step is one line:   level: what students can do
+# The level is where that step first opens. A level also opens every step below it.
+# Lines that start with # are notes for people. KIDDAW ignores them.
+
+Levels: K-1, 2-3, 4-5, Studio
+
+== Rhythm ==
+K-1: Steady beat; ta and rest; fast and slow
+K-1: ta-ti
+2-3: ta-ah; meter in 2 and 4
+2-3: ta-ka-ti-ki
+4-5: ta-ti-ki and ta-ka-ti; meter in 3; largo, andante, allegro
+4-5: Syncopation and dotted rhythms; accelerando and ritardando
+Studio: Swing, 6/8, triplets, any rhythm
+
+== Melody ==
+K-1: sol-mi
+K-1: sol-mi-la
+2-3: do-re-mi, then do-re-mi-sol-la (pentatonic)
+2-3: Low la, low sol, high do
+4-5: fa and ti: the full major scale
+4-5: Minor and other keys
+Studio: Every note, any key or mode
+
+== Harmony ==
+2-3: A drone: do and sol held under a melody
+2-3: An ostinato: a short pattern that repeats underneath
+4-5: Two chords: I and V
+4-5: Three chords: I, IV and V; a bass line
+Studio: Any chords, including minor chords
+
+== Texture ==
+K-1: Thin and thick: add and remove layers
+2-3: Melody and accompaniment
+2-3: Layers coming in and dropping out: build-ups and breakdowns
+4-5: Rounds: the same melody starting again later
+4-5: A countermelody: two melodies at once
+Studio: Balance: choose which layer is in front
+
+== Timbre ==
+K-1: Choose instruments by family; a drum kit or body percussion
+K-1: Free play: play any instrument live, no song needed
+2-3: Shape a sound in kid words, like bright or dark, short or long; effects like echo, big room, robot, underwater
+4-5: Record your own sound and play it as an instrument
+Studio: Design a sound from scratch
+
+== Dynamics ==
+K-1: Forte and piano
+2-3: pp to ff
+2-3: Crescendo and decrescendo
+4-5: Accents; one layer louder or softer than the others
+Studio: Draw the dynamics across a whole song
+
+== Form ==
+K-1: Same and different: A and B
+2-3: ABA
+4-5: Rondo (ABACA); intro and coda
+4-5: Verse and chorus; theme and variations (A, A', A'')
+Studio: Any form; copy and change sections freely

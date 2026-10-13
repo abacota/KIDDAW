@@ -1,20 +1,36 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# KIDDAW
 
-# Run and deploy your AI Studio app
+A free music studio for K-5 that runs in the browser on school Chromebooks, organized by the elements of music.
+See [PLAN.md](PLAN.md) for what it is, who it's for, and the phases.
 
-This contains everything you need to run your app locally.
+## Where things are
 
-View your app in AI Studio: https://ai.studio/apps/e13d04b8-4df5-46b2-ae98-41276762cf88
+| Folder | What's in it |
+|---|---|
+| `settings/ladders.txt` | The ladders and levels. Plain text; edit it without code. |
+| `src/song` | What a song is, and song links |
+| `src/engine` | The sound engine and the instruments |
+| `src/saving` | My songs, and song links in web addresses |
+| `src/settings` | Reads the ladders file |
+| `src/tools` | The screens |
 
-## Run Locally
+## Running it
 
-**Prerequisites:**  Node.js
+```bash
+npm install
+```
 
+```bash
+npm run dev
+```
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+Then open http://localhost:3000.
+
+## The automatic check
+
+```bash
+npm run check
+```
+
+It runs the type check, the tests, a full build, and the word check (no "ti" + "-ti" anywhere students can see).
+It runs on every save to GitHub, and Vercel runs it before every deploy, so a broken version never reaches students.
