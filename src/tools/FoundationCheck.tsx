@@ -139,6 +139,7 @@ export function FoundationCheck() {
   const stepCount = LADDERS.ladders.reduce((n, l) => n + l.steps.length, 0);
 
   return (
+    <div className="min-h-screen bg-slate-950 text-slate-100">
     <main className="mx-auto max-w-2xl space-y-4 px-4 py-6">
       <header>
         <h1 className="text-3xl font-black tracking-tight">KIDDAW</h1>
@@ -265,5 +266,6 @@ export function FoundationCheck() {
         )}
       </Card>
     </main>
+    </div>
   );
 }

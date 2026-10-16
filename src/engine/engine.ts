@@ -50,6 +50,7 @@ class Engine {
   private timeline: Timeline = { events: [], sections: [], length: 0 };
   private windows = new Map<number, PlayEvent[]>();
   private tracks = new Map<string, Track>();
+  private previewVoices = new Map<string, Voice>();
   private master: Tone.Gain | null = null;
   /** The audio context the engine was built in. It keeps using this one clock, even while a song is being rendered offline. */
   private context: Tone.BaseContext | null = null;
@@ -120,6 +121,27 @@ class Engine {
     }
     transport.start();
     this.setStatus('playing');
+  }
+
+  /**
+   * Plays a sound right now, outside the song: tapping a row's name, or hearing
+   * a beat just placed while the music is stopped. hits are [tick, length] from now.
+   * Like play(), call it straight from a tap or click.
+   */
+  async preview(soundId: string, hits: [number, number][] = [[0, TICKS_PER_BEAT]], pitch = 60): Promise<void> {
+    await Tone.start();
+    const context = this.buildMaster();
+    let voice = this.previewVoices.get(soundId);
+    if (!voice) {
+      voice = createVoice(soundId);
+      voice.output.connect(this.master!);
+      this.previewVoices.set(soundId, voice);
+    }
+    const secondsPerTick = 60 / (this.song?.tempo ?? 100) / TICKS_PER_BEAT;
+    const now = context.immediate() + 0.02;
+    for (const [tick, length] of hits) {
+      voice.play(now + tick * secondsPerTick, pitch, length * secondsPerTick, 0.8);
+    }
   }
 
   pause(): void {

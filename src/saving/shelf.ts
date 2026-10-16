@@ -20,12 +20,16 @@ export interface Shelf {
   /** Returns false if the song could not be saved (for example, storage is full). */
   save(song: Song, now?: number): boolean;
   remove(id: string): void;
+  /** The song a student was last working on at a level, so it opens there next time. */
+  current(level: string): string | null;
+  setCurrent(level: string, id: string): void;
 }
 
 type Storage = Pick<globalThis.Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
 const SHELF_KEY = 'kiddaw.shelf';
 const songKey = (id: string) => `kiddaw.song.${id}`;
+const currentKey = (level: string) => `kiddaw.current.${level}`;
 
 function readJson(storage: Storage, key: string): unknown {
   try {
@@ -43,7 +47,15 @@ function isSaved(v: unknown): v is SavedSong {
 
 export function createShelf(storage: Storage | null): Shelf {
   if (!storage) {
-    return { available: false, list: () => [], load: () => null, save: () => false, remove: () => {} };
+    return {
+      available: false,
+      list: () => [],
+      load: () => null,
+      save: () => false,
+      remove: () => {},
+      current: () => null,
+      setCurrent: () => {},
+    };
   }
 
   const readList = (): SavedSong[] => {
@@ -92,6 +104,22 @@ export function createShelf(storage: Storage | null): Shelf {
         // Nothing more to do; the shelf skips songs with no data.
       }
       writeList(readList().filter(s => s.id !== id));
+    },
+
+    current(level) {
+      try {
+        return storage.getItem(currentKey(level));
+      } catch {
+        return null;
+      }
+    },
+
+    setCurrent(level, id) {
+      try {
+        storage.setItem(currentKey(level), id);
+      } catch {
+        // Not being able to remember the current song is fine; the shelf still has it.
+      }
     },
   };
 }

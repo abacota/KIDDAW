@@ -8,6 +8,7 @@ See [PLAN.md](PLAN.md) for what it is, who it's for, and the phases.
 | Folder | What's in it |
 |---|---|
 | `settings/ladders.txt` | The ladders and levels. Plain text; edit it without code. |
+| `settings/levels.txt` | How many beats and sounds each level gets. Plain text too. |
 | `src/song` | What a song is, and song links |
 | `src/engine` | The sound engine and the instruments |
 | `src/saving` | My songs, and song links in web addresses |

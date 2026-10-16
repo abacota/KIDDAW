@@ -1,10 +1,10 @@
 /**
  * A short demo song in ABA form, used by the foundation check and the tests.
- * A: drum kit, a sol-mi-la melody on xylophone, a do-sol drone.
+ * A: kick, snare and hi-hat, a sol-mi-la melody on xylophone, a do-sol drone.
  * B: body percussion and a new melody, growing from piano to forte.
  */
 
-import { TICKS_PER_BEAT as BEAT, type Note, type Song } from './song';
+import { TICKS_PER_BEAT as BEAT, type Layer, type Note, type Song } from './song';
 
 const BAR = BEAT * 4;
 const DO = 60, RE = 62, MI = 64, SOL = 67, LA = 69, HIGH_DO = 72;
@@ -14,8 +14,22 @@ const LOW_DO = 48, LOW_SOL = 55;
 const notes = (list: [number, number, number][], velocity = 96): Note[] =>
   list.map(([beat, beats, pitch]) => ({ start: beat * BEAT, length: beats * BEAT, pitch, velocity }));
 
-const KICK = 0, SNARE = 1, HIHAT = 2;
-const STOMP = 0, PAT = 1, SNAP = 2, CLAP = 3;
+/** A one-bar percussion row: [beat, beats long] for each hit. */
+function row(id: string, name: string, sound: string, hits: [number, number][]): Layer {
+  return {
+    id,
+    name,
+    kind: 'beat',
+    sound,
+    volume: 80,
+    pan: 0,
+    muted: false,
+    solo: false,
+    patterns: [{ id: `${id}-1`, length: BAR, notes: notes(hits.map(([b, l]) => [b, l, 0])) }],
+  };
+}
+
+const eighths: [number, number][] = [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5].map(b => [b, 0.5]);
 
 export function demoSong(): Song {
   return {
@@ -27,45 +41,13 @@ export function demoSong(): Song {
     swing: 0,
     key: { tonic: 0, mode: 'major' },
     layers: [
-      {
-        id: 'drums',
-        name: 'Drum kit',
-        kind: 'beat',
-        sound: 'drum-kit',
-        volume: 80,
-        pan: 0,
-        muted: false,
-        solo: false,
-        patterns: [
-          {
-            id: 'rock',
-            length: BAR,
-            notes: notes([
-              [0, 0.5, KICK], [0, 0.5, HIHAT], [0.5, 0.5, HIHAT],
-              [1, 0.5, SNARE], [1, 0.5, HIHAT], [1.5, 0.5, HIHAT],
-              [2, 0.5, KICK], [2, 0.5, HIHAT], [2.5, 0.5, HIHAT],
-              [3, 0.5, SNARE], [3, 0.5, HIHAT], [3.5, 0.5, HIHAT],
-            ]),
-          },
-        ],
-      },
-      {
-        id: 'body',
-        name: 'Body percussion',
-        kind: 'beat',
-        sound: 'body',
-        volume: 85,
-        pan: 0,
-        muted: false,
-        solo: false,
-        patterns: [
-          {
-            id: 'stomp',
-            length: BAR,
-            notes: notes([[0, 1, STOMP], [1, 0.5, PAT], [1.5, 0.5, PAT], [2, 1, CLAP], [3, 1, SNAP]]),
-          },
-        ],
-      },
+      row('kick', 'Kick drum', 'kick', [[0, 1], [2, 1]]),
+      row('snare', 'Snare drum', 'snare', [[1, 1], [3, 1]]),
+      row('hihat', 'Hi-hat', 'hihat', eighths),
+      row('stomp', 'Stomp', 'stomp', [[0, 1]]),
+      row('pat', 'Pat', 'pat', [[1, 0.5], [1.5, 0.5]]),
+      row('clap', 'Clap', 'clap', [[2, 1]]),
+      row('snap', 'Snap', 'snap', [[3, 1]]),
       {
         id: 'melody',
         name: 'Melody',
@@ -107,8 +89,20 @@ export function demoSong(): Song {
       },
     ],
     sections: [
-      { id: 'A', name: 'A', bars: 2, parts: { drums: 'rock', melody: 'tune-a', bass: 'drone' }, dynamics: { from: 'mf', to: 'mf' } },
-      { id: 'B', name: 'B', bars: 2, parts: { body: 'stomp', melody: 'tune-b', bass: 'drone' }, dynamics: { from: 'p', to: 'f' } },
+      {
+        id: 'A',
+        name: 'A',
+        bars: 2,
+        parts: { kick: 'kick-1', snare: 'snare-1', hihat: 'hihat-1', melody: 'tune-a', bass: 'drone' },
+        dynamics: { from: 'mf', to: 'mf' },
+      },
+      {
+        id: 'B',
+        name: 'B',
+        bars: 2,
+        parts: { stomp: 'stomp-1', pat: 'pat-1', clap: 'clap-1', snap: 'snap-1', melody: 'tune-b', bass: 'drone' },
+        dynamics: { from: 'p', to: 'f' },
+      },
     ],
     form: ['A', 'B', 'A'],
   };

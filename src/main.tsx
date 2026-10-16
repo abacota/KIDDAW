@@ -1,10 +1,10 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { FoundationCheck } from './tools/FoundationCheck';
+import { App } from './tools/App';
 import './index.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <FoundationCheck />
+    <App />
   </StrictMode>,
 );

@@ -138,7 +138,8 @@ The **Studio** level opens everything, and Adam can give its link to any student
 Adam can also make a link for one element, so a dynamics lesson opens with the dynamics tools ready.
 
 Adam puts the links on his Clever teacher page, so students tap an icon instead of typing.
-The ladders and levels live in a plain text settings file Adam can edit without code.
+The ladders and levels live in two plain text files Adam can edit without code:
+`settings/ladders.txt` (the steps of each element) and `settings/levels.txt` (how many beats and sounds each level gets).
 
 ## Sounds
 
@@ -204,12 +205,17 @@ The old version stays in GitHub's history, and the live site keeps showing it un
 - **Done when:** the check runs on every save, and a student Chromebook plays a song from a song link.
 
 ### Phase 1: Rhythm (the first thing students use)
-- [ ] The song screen with rhythm layers
-- [ ] Rhythm steps 1-4, texture step 1, timbre step 1 (drum kit or body percussion)
-- [ ] Play, loop and tempo, keeping steady time on a busy Chromebook
-- [ ] Ears first: the loop plays while you edit; play a beat in on the pads; small canvases and layer limits; the Listen button
-- [ ] Auto-save, My songs, Share link
-- [ ] Level links and projector mode
+- [x] The song screen with rhythm rows, one sound per row
+- [x] Rhythm steps 1-4, texture step 1, timbre step 1 (drum kit or body percussion)
+- [x] Play, loop and tempo (slow, medium, fast)
+- [ ] Steady time checked on a busy Chromebook
+- [x] Ears first: the loop plays while you edit; you hear each beat you place; tap a sound's name to hear it;
+      hear the beat without a sound; small canvases and sound limits by level (settings/levels.txt)
+- [ ] Ears first: play a beat in on the pads; the Listen button
+- [x] Auto-save
+- [ ] My songs, Share link
+- [x] Level links (kiddaw.vercel.app/k-1 and so on), and a page of links for Adam
+- [ ] Projector mode
 - **Done when:** a class makes beats on Chromebooks, comes back to them the next week, and Adam plays one on the projector.
 
 ### Phase 2: Melody

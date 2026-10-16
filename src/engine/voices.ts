@@ -46,15 +46,17 @@ function noiseHit(
   return synth;
 }
 
-/** trimDb sets the whole kit's level so it sits well under a melody. */
-function beatVoice(trimDb: number, build: (out: Tone.Gain, nodes: Tone.ToneAudioNode[]) => Hit[]): Voice {
+type Build = (out: Tone.Gain, nodes: Tone.ToneAudioNode[]) => Hit;
+
+/** One percussion sound. trimDb sets its level so the sounds balance with each other and with a melody. */
+function percussionVoice(trimDb: number, build: Build): Voice {
   const out = new Tone.Gain(Tone.dbToGain(trimDb));
   const nodes: Tone.ToneAudioNode[] = [out];
-  const hits = build(out, nodes);
+  const hit = build(out, nodes);
   return {
     output: out,
-    play(time, lane, _seconds, velocity) {
-      hits[lane]?.(time, velocity);
+    play(time, _pitch, _seconds, velocity) {
+      hit(time, velocity);
     },
     stopAll() {},
     dispose() {
@@ -63,20 +65,38 @@ function beatVoice(trimDb: number, build: (out: Tone.Gain, nodes: Tone.ToneAudio
   };
 }
 
-function drumKit(): Voice {
-  return beatVoice(-6, (out, nodes) => {
-    const kick = new Tone.MembraneSynth({
+function membrane(out: Tone.ToneAudioNode, nodes: Tone.ToneAudioNode[], opts: ConstructorParameters<typeof Tone.MembraneSynth>[0]) {
+  const synth = new Tone.MembraneSynth(opts).connect(out);
+  nodes.push(synth);
+  return synth;
+}
+
+const PERCUSSION: Record<string, [number, Build]> = {
+  kick: [-8, (out, nodes) => {
+    const kick = membrane(out, nodes, {
       pitchDecay: 0.05,
       octaves: 6,
       envelope: { attack: 0.001, decay: 0.32, sustain: 0, release: 0.1 },
       volume: 2,
-    }).connect(out);
-    const snare = noiseHit(out, nodes, { noise: 'white', filter: 'highpass', frequency: 1200, decay: 0.16, db: -4 });
-    const snareBody = new Tone.Synth({
+    });
+    const t = inOrder();
+    return (time, v) => kick.triggerAttackRelease('C1', 0.3, t(time), v);
+  }],
+  snare: [-8, (out, nodes) => {
+    const noise = noiseHit(out, nodes, { noise: 'white', filter: 'highpass', frequency: 1200, decay: 0.16, db: -4 });
+    const body = new Tone.Synth({
       oscillator: { type: 'triangle' },
       envelope: { attack: 0.001, decay: 0.07, sustain: 0, release: 0.02 },
       volume: -6,
     }).connect(out);
+    nodes.push(body);
+    const [a, b] = [inOrder(), inOrder()];
+    return (time, v) => {
+      noise.triggerAttackRelease(0.16, a(time), v);
+      body.triggerAttackRelease(190, 0.07, b(time), v);
+    };
+  }],
+  hihat: [-6, (out, nodes) => {
     const hat = new Tone.MetalSynth({
       envelope: { attack: 0.001, decay: 0.05, release: 0.01 },
       harmonicity: 5.1,
@@ -85,54 +105,50 @@ function drumKit(): Voice {
       octaves: 1.5,
       volume: -20,
     }).connect(out);
-    const clap = noiseHit(out, nodes, { noise: 'pink', filter: 'bandpass', frequency: 1400, q: 0.8, decay: 0.1, db: -2 });
-    const tom = new Tone.MembraneSynth({
+    nodes.push(hat);
+    const t = inOrder();
+    return (time, v) => hat.triggerAttackRelease(250, 0.05, t(time), v);
+  }],
+  tom: [-6, (out, nodes) => {
+    const tom = membrane(out, nodes, {
       pitchDecay: 0.08,
       octaves: 3,
       envelope: { attack: 0.001, decay: 0.35, sustain: 0, release: 0.1 },
-    }).connect(out);
-    nodes.push(kick, snareBody, hat, tom);
-
-    const [k, s, sb, h, c, t] = [inOrder(), inOrder(), inOrder(), inOrder(), inOrder(), inOrder()];
-    return [
-      (time, v) => kick.triggerAttackRelease('C1', 0.3, k(time), v),
-      (time, v) => {
-        snare.triggerAttackRelease(0.16, s(time), v);
-        snareBody.triggerAttackRelease(190, 0.07, sb(time), v);
-      },
-      (time, v) => hat.triggerAttackRelease(250, 0.05, h(time), v),
-      (time, v) => [0, 0.011, 0.023].forEach(d => clap.triggerAttackRelease(0.1, c(time + d), v)),
-      (time, v) => tom.triggerAttackRelease('G2', 0.3, t(time), v),
-    ];
-  });
-}
-
-function bodyPercussion(): Voice {
-  return beatVoice(0, (out, nodes) => {
-    const stompThump = new Tone.MembraneSynth({
+    });
+    const t = inOrder();
+    return (time, v) => tom.triggerAttackRelease('G2', 0.3, t(time), v);
+  }],
+  stomp: [0, (out, nodes) => {
+    const thump = membrane(out, nodes, {
       pitchDecay: 0.03,
       octaves: 2.5,
       envelope: { attack: 0.002, decay: 0.22, sustain: 0, release: 0.05 },
       volume: 2,
-    }).connect(out);
-    const stompFloor = noiseHit(out, nodes, { noise: 'brown', filter: 'lowpass', frequency: 500, decay: 0.08, db: -2 });
+    });
+    const floor = noiseHit(out, nodes, { noise: 'brown', filter: 'lowpass', frequency: 500, decay: 0.08, db: -2 });
+    const [a, b] = [inOrder(), inOrder()];
+    return (time, v) => {
+      thump.triggerAttackRelease('A0', 0.2, a(time), v);
+      floor.triggerAttackRelease(0.08, b(time), v);
+    };
+  }],
+  pat: [0, (out, nodes) => {
     const pat = noiseHit(out, nodes, { noise: 'pink', filter: 'lowpass', frequency: 900, decay: 0.07, db: 4 });
-    const snap = noiseHit(out, nodes, { noise: 'white', filter: 'bandpass', frequency: 3000, q: 3, decay: 0.03, db: 6 });
+    const t = inOrder();
+    return (time, v) => pat.triggerAttackRelease(0.07, t(time), v);
+  }],
+  clap: [0, (out, nodes) => {
     const clap = noiseHit(out, nodes, { noise: 'white', filter: 'bandpass', frequency: 1200, q: 1, decay: 0.06, db: 0 });
-    nodes.push(stompThump);
-
-    const [st, sf, p, sn, c] = [inOrder(), inOrder(), inOrder(), inOrder(), inOrder()];
-    return [
-      (time, v) => {
-        stompThump.triggerAttackRelease('A0', 0.2, st(time), v);
-        stompFloor.triggerAttackRelease(0.08, sf(time), v);
-      },
-      (time, v) => pat.triggerAttackRelease(0.07, p(time), v),
-      (time, v) => snap.triggerAttackRelease(0.03, sn(time), v),
-      (time, v) => [0, 0.009, 0.019].forEach(d => clap.triggerAttackRelease(0.06, c(time + d), v)),
-    ];
-  });
-}
+    const t = inOrder();
+    // A clap is a few hands landing a split second apart.
+    return (time, v) => [0, 0.009, 0.019].forEach(d => clap.triggerAttackRelease(0.06, t(time + d), v));
+  }],
+  snap: [0, (out, nodes) => {
+    const snap = noiseHit(out, nodes, { noise: 'white', filter: 'bandpass', frequency: 3000, q: 3, decay: 0.03, db: 6 });
+    const t = inOrder();
+    return (time, v) => snap.triggerAttackRelease(0.03, t(time), v);
+  }],
+};
 
 function pitchedVoice(synth: Tone.PolySynth): Voice {
   return {
@@ -187,7 +203,7 @@ const PITCHED: Record<string, () => Tone.PolySynth> = {
 };
 
 export function createVoice(soundId: string): Voice {
-  if (soundId === 'drum-kit') return drumKit();
-  if (soundId === 'body') return bodyPercussion();
+  const percussion = PERCUSSION[soundId];
+  if (percussion) return percussionVoice(...percussion);
   return pitchedVoice((PITCHED[soundId] ?? PITCHED.piano)());
 }

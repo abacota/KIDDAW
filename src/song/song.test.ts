@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { demoSong } from './demo';
-import { barTicks, createSong, parseSong, TICKS_PER_BEAT } from './song';
+import { barTicks, createSong, parseSong, TICKS_PER_BEAT, type Song } from './song';
+
+const melody = (song: Song) => song.layers.find(l => l.id === 'melody')!;
 
 describe('songs', () => {
   it('the demo song is already clean, so checking it changes nothing', () => {
@@ -27,22 +29,22 @@ describe('songs', () => {
 
   it('notes are sorted, kept inside their pattern, and doubled notes are dropped', () => {
     const demo = demoSong();
-    demo.layers[2].patterns[0].notes = [
+    melody(demo).patterns[0].notes = [
       { start: 96, length: 48, pitch: 64, velocity: 96 },
       { start: 0, length: 9999, pitch: 67, velocity: 500 },
       { start: 96, length: 24, pitch: 64, velocity: 96 },
       { start: -1, length: 48, pitch: 60, velocity: 96 },
     ];
-    const notes = parseSong(demo)!.layers[2].patterns[0].notes;
+    const notes = melody(parseSong(demo)!).patterns[0].notes;
     expect(notes).toEqual([
-      { start: 0, length: demo.layers[2].patterns[0].length, pitch: 67, velocity: 127 },
+      { start: 0, length: melody(demo).patterns[0].length, pitch: 67, velocity: 127 },
       { start: 96, length: 48, pitch: 64, velocity: 96 },
     ]);
   });
 
   it('a section that points at a missing pattern or layer just rests there', () => {
     const demo = demoSong();
-    demo.sections[0].parts = { drums: 'nope', ghost: 'rock', melody: 'tune-a' };
+    demo.sections[0].parts = { kick: 'nope', ghost: 'kick-1', melody: 'tune-a' };
     expect(parseSong(demo)!.sections[0].parts).toEqual({ melody: 'tune-a' });
   });
 
@@ -54,10 +56,10 @@ describe('songs', () => {
   it('an unknown sound falls back to one that fits the layer', () => {
     const demo = demoSong();
     demo.layers[0].sound = 'xylophone';
-    demo.layers[2].sound = 'kazoo-3000';
+    melody(demo).sound = 'kazoo-3000';
     const song = parseSong(demo)!;
-    expect(song.layers[0].sound).toBe('drum-kit');
-    expect(song.layers[2].sound).toBe('xylophone');
+    expect(song.layers[0].sound).toBe('clap');
+    expect(melody(song).sound).toBe('xylophone');
   });
 
   it('bar lengths follow the meter', () => {

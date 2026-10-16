@@ -27,7 +27,7 @@ export interface Note {
   start: number;
   /** Ticks. */
   length: number;
-  /** MIDI note number (60 is middle C) on pitched layers; lane number on beat layers. */
+  /** MIDI note number (60 is middle C) on pitched layers. Always 0 on beat layers, which have one sound each. */
   pitch: number;
   /** How hard the note is played, 1-127. */
   velocity: number;
@@ -155,7 +155,7 @@ function oneOf<T extends string>(options: readonly T[], v: unknown, fallback: T)
   return options.includes(v as T) ? (v as T) : fallback;
 }
 
-function parseNotes(value: unknown, patternLength: number): Note[] {
+function parseNotes(value: unknown, patternLength: number, kind: LayerKind): Note[] {
   if (!Array.isArray(value)) return [];
   const notes: Note[] = [];
   for (const n of value.slice(0, LIMITS.notesPerPattern)) {
@@ -165,7 +165,7 @@ function parseNotes(value: unknown, patternLength: number): Note[] {
     notes.push({
       start,
       length: int(n.length, 1, patternLength - start, 1),
-      pitch: int(n.pitch, 0, 127, 60),
+      pitch: kind === 'beat' ? 0 : int(n.pitch, 0, 127, 60),
       velocity: int(n.velocity, 1, 127, 96),
     });
   }
@@ -174,10 +174,10 @@ function parseNotes(value: unknown, patternLength: number): Note[] {
   return notes.filter((n, i) => i === 0 || n.start !== notes[i - 1].start || n.pitch !== notes[i - 1].pitch);
 }
 
-function parsePattern(value: unknown): Pattern | null {
+function parsePattern(value: unknown, kind: LayerKind): Pattern | null {
   if (!isObj(value) || !isId(value.id)) return null;
   const length = int(value.length, LIMITS.patternLength[0], LIMITS.patternLength[1], TICKS_PER_BEAT * 4);
-  return { id: value.id, length, notes: parseNotes(value.notes, length) };
+  return { id: value.id, length, notes: parseNotes(value.notes, length, kind) };
 }
 
 function parseLayer(value: unknown): Layer | null {
@@ -188,7 +188,7 @@ function parseLayer(value: unknown): Layer | null {
   const patterns: Pattern[] = [];
   if (Array.isArray(value.patterns)) {
     for (const p of value.patterns.slice(0, LIMITS.patternsPerLayer)) {
-      const pattern = parsePattern(p);
+      const pattern = parsePattern(p, kind);
       if (pattern && !patterns.some(q => q.id === pattern.id)) patterns.push(pattern);
     }
   }

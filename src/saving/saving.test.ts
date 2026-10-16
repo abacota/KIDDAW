@@ -57,6 +57,14 @@ describe('My songs', () => {
     expect(shelf.save(demoSong())).toBe(false);
   });
 
+  it('remembers which song a student was working on at each level', () => {
+    const shelf = createShelf(memoryStorage());
+    expect(shelf.current('k-1')).toBeNull();
+    shelf.setCurrent('k-1', 'demo01');
+    expect(shelf.current('k-1')).toBe('demo01');
+    expect(shelf.current('2-3')).toBeNull();
+  });
+
   it('a browser that blocks saving still works, it just cannot save', () => {
     const shelf = createShelf(null);
     expect(shelf.available).toBe(false);

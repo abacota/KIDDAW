@@ -1,0 +1,13 @@
+# KIDDAW level limits
+#
+# You can change this file without touching any code.
+#
+# Small canvases and few sounds make students choose, and choosing makes them listen.
+# Each line is:   level: how many beats a pattern has, how many sounds a beat can use
+# The levels must match the Levels line in ladders.txt.
+# Which rhythms each level can use comes from the Rhythm ladder in ladders.txt.
+
+K-1: 4 beats, 3 sounds
+2-3: 8 beats, 5 sounds
+4-5: 8 beats, 8 sounds
+Studio: 16 beats, 8 sounds

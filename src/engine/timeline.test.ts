@@ -18,16 +18,16 @@ describe('timeline', () => {
 
   it('a one-bar pattern repeats to fill a two-bar section', () => {
     const t = buildTimeline(demoSong());
-    const kicks = t.events.filter(e => e.layerId === 'drums' && e.pitch === 0 && e.tick < 2 * BAR);
+    const kicks = t.events.filter(e => e.layerId === 'kick' && e.tick < 2 * BAR);
     expect(kicks.map(e => e.tick)).toEqual([0, 2 * BEAT, BAR, BAR + 2 * BEAT]);
   });
 
   it('a layer missing from a section rests there (thin and thick texture)', () => {
     const t = buildTimeline(demoSong());
     const inB = (e: { tick: number }) => e.tick >= 2 * BAR && e.tick < 4 * BAR;
-    expect(t.events.some(e => e.layerId === 'drums' && inB(e))).toBe(false);
-    expect(t.events.some(e => e.layerId === 'body' && inB(e))).toBe(true);
-    expect(t.events.some(e => e.layerId === 'body' && !inB(e))).toBe(false);
+    expect(t.events.some(e => e.layerId === 'kick' && inB(e))).toBe(false);
+    expect(t.events.some(e => e.layerId === 'stomp' && inB(e))).toBe(true);
+    expect(t.events.some(e => e.layerId === 'stomp' && !inB(e))).toBe(false);
   });
 
   it('a pattern longer than its section is cut off at the section end', () => {
@@ -50,7 +50,7 @@ describe('timeline', () => {
   it('swing moves the ti of ta-ti later, and only the ti', () => {
     const song = demoSong();
     song.swing = 100;
-    const hats = buildTimeline(song).events.filter(e => e.layerId === 'drums' && e.pitch === 2 && e.tick < BEAT);
+    const hats = buildTimeline(song).events.filter(e => e.layerId === 'hihat' && e.tick < BEAT);
     expect(hats.map(e => e.tick)).toEqual([0, BEAT / 2 + BEAT / 6]);
   });
 
