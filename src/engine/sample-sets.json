@@ -1,0 +1,346 @@
+{
+ "chest.recorded": {
+  "layers": [
+   [
+    "chest.recorded/v1-1.m4a",
+    "chest.recorded/v1-2.m4a"
+   ],
+   [
+    "chest.recorded/v2-1.m4a",
+    "chest.recorded/v2-2.m4a"
+   ]
+  ],
+  "license": "CC0",
+  "source": "sfzinstruments body_percussion",
+  "type": "hits"
+ },
+ "clap.recorded": {
+  "layers": [
+   [
+    "clap.recorded/v1-1.m4a",
+    "clap.recorded/v1-2.m4a"
+   ],
+   [
+    "clap.recorded/v2-1.m4a",
+    "clap.recorded/v2-2.m4a"
+   ]
+  ],
+  "license": "CC0",
+  "source": "sfzinstruments body_percussion",
+  "type": "hits"
+ },
+ "crash.rock": {
+  "layers": [
+   [
+    "crash.rock/v1-1.m4a",
+    "crash.rock/v1-2.m4a"
+   ],
+   [
+    "crash.rock/v2-1.m4a",
+    "crash.rock/v2-2.m4a"
+   ]
+  ],
+  "license": "CC BY 4.0",
+  "source": "MuldjordKit. Drum samples provided by DrumGizmo.org (via FreePats)",
+  "type": "hits"
+ },
+ "crash.studio": {
+  "layers": [
+   [
+    "crash.studio/v1-1.m4a",
+    "crash.studio/v1-2.m4a"
+   ],
+   [
+    "crash.studio/v2-1.m4a",
+    "crash.studio/v2-2.m4a"
+   ]
+  ],
+  "license": "CC0",
+  "source": "Virtuosity Drums (Versilian Studios)",
+  "type": "hits"
+ },
+ "hihat.rock": {
+  "layers": [
+   [
+    "hihat.rock/v1-1.m4a",
+    "hihat.rock/v1-2.m4a"
+   ],
+   [
+    "hihat.rock/v2-1.m4a",
+    "hihat.rock/v2-2.m4a"
+   ]
+  ],
+  "license": "CC BY 4.0",
+  "source": "MuldjordKit. Drum samples provided by DrumGizmo.org (via FreePats)",
+  "type": "hits"
+ },
+ "hihat.studio": {
+  "layers": [
+   [
+    "hihat.studio/v1-1.m4a",
+    "hihat.studio/v1-2.m4a"
+   ],
+   [
+    "hihat.studio/v2-1.m4a",
+    "hihat.studio/v2-2.m4a"
+   ]
+  ],
+  "license": "CC0",
+  "source": "Virtuosity Drums (Versilian Studios)",
+  "type": "hits"
+ },
+ "kick.rock": {
+  "layers": [
+   [
+    "kick.rock/v1-1.m4a",
+    "kick.rock/v1-2.m4a"
+   ],
+   [
+    "kick.rock/v2-1.m4a",
+    "kick.rock/v2-2.m4a"
+   ]
+  ],
+  "license": "CC BY 4.0",
+  "source": "MuldjordKit. Drum samples provided by DrumGizmo.org (via FreePats)",
+  "type": "hits"
+ },
+ "kick.studio": {
+  "layers": [
+   [
+    "kick.studio/v1-1.m4a",
+    "kick.studio/v1-2.m4a"
+   ],
+   [
+    "kick.studio/v2-1.m4a",
+    "kick.studio/v2-2.m4a"
+   ]
+  ],
+  "license": "CC0",
+  "source": "Virtuosity Drums (Versilian Studios)",
+  "type": "hits"
+ },
+ "lowtom.rock": {
+  "layers": [
+   [
+    "lowtom.rock/v1-1.m4a",
+    "lowtom.rock/v1-2.m4a"
+   ],
+   [
+    "lowtom.rock/v2-1.m4a",
+    "lowtom.rock/v2-2.m4a"
+   ]
+  ],
+  "license": "CC BY 4.0",
+  "source": "MuldjordKit. Drum samples provided by DrumGizmo.org (via FreePats)",
+  "type": "hits"
+ },
+ "lowtom.studio": {
+  "layers": [
+   [
+    "lowtom.studio/v1-1.m4a",
+    "lowtom.studio/v1-2.m4a"
+   ],
+   [
+    "lowtom.studio/v2-1.m4a",
+    "lowtom.studio/v2-2.m4a"
+   ]
+  ],
+  "license": "CC0",
+  "source": "Virtuosity Drums (Versilian Studios)",
+  "type": "hits"
+ },
+ "openhat.rock": {
+  "layers": [
+   [
+    "openhat.rock/v1-1.m4a",
+    "openhat.rock/v1-2.m4a"
+   ],
+   [
+    "openhat.rock/v2-1.m4a",
+    "openhat.rock/v2-2.m4a"
+   ]
+  ],
+  "license": "CC BY 4.0",
+  "source": "MuldjordKit. Drum samples provided by DrumGizmo.org (via FreePats)",
+  "type": "hits"
+ },
+ "openhat.studio": {
+  "layers": [
+   [
+    "openhat.studio/v1-1.m4a",
+    "openhat.studio/v1-2.m4a"
+   ],
+   [
+    "openhat.studio/v2-1.m4a",
+    "openhat.studio/v2-2.m4a"
+   ]
+  ],
+  "license": "CC0",
+  "source": "Virtuosity Drums (Versilian Studios)",
+  "type": "hits"
+ },
+ "pat.recorded": {
+  "layers": [
+   [
+    "pat.recorded/v1-1.m4a",
+    "pat.recorded/v1-2.m4a"
+   ],
+   [
+    "pat.recorded/v2-1.m4a"
+   ]
+  ],
+  "license": "CC0",
+  "source": "Pipira_Piraco on Freesound (sounds 860386-860388)",
+  "type": "hits"
+ },
+ "piano.salamander": {
+  "license": "CC BY 3.0",
+  "notes": {
+   "33": "piano.salamander/33.m4a",
+   "36": "piano.salamander/36.m4a",
+   "39": "piano.salamander/39.m4a",
+   "42": "piano.salamander/42.m4a",
+   "45": "piano.salamander/45.m4a",
+   "48": "piano.salamander/48.m4a",
+   "51": "piano.salamander/51.m4a",
+   "54": "piano.salamander/54.m4a",
+   "57": "piano.salamander/57.m4a",
+   "60": "piano.salamander/60.m4a",
+   "63": "piano.salamander/63.m4a",
+   "66": "piano.salamander/66.m4a",
+   "69": "piano.salamander/69.m4a",
+   "72": "piano.salamander/72.m4a",
+   "75": "piano.salamander/75.m4a",
+   "78": "piano.salamander/78.m4a",
+   "81": "piano.salamander/81.m4a",
+   "84": "piano.salamander/84.m4a",
+   "87": "piano.salamander/87.m4a",
+   "90": "piano.salamander/90.m4a",
+   "93": "piano.salamander/93.m4a",
+   "96": "piano.salamander/96.m4a"
+  },
+  "release": 1.0,
+  "source": "Salamander Grand Piano V3 by Alexander Holm",
+  "type": "notes"
+ },
+ "ride.rock": {
+  "layers": [
+   [
+    "ride.rock/v1-1.m4a",
+    "ride.rock/v1-2.m4a"
+   ],
+   [
+    "ride.rock/v2-1.m4a",
+    "ride.rock/v2-2.m4a"
+   ]
+  ],
+  "license": "CC BY 4.0",
+  "source": "MuldjordKit. Drum samples provided by DrumGizmo.org (via FreePats)",
+  "type": "hits"
+ },
+ "ride.studio": {
+  "layers": [
+   [
+    "ride.studio/v1-1.m4a",
+    "ride.studio/v1-2.m4a"
+   ],
+   [
+    "ride.studio/v2-1.m4a",
+    "ride.studio/v2-2.m4a"
+   ]
+  ],
+  "license": "CC0",
+  "source": "Virtuosity Drums (Versilian Studios)",
+  "type": "hits"
+ },
+ "snap.recorded": {
+  "layers": [
+   [
+    "snap.recorded/v1-1.m4a",
+    "snap.recorded/v1-2.m4a"
+   ],
+   [
+    "snap.recorded/v2-1.m4a",
+    "snap.recorded/v2-2.m4a"
+   ]
+  ],
+  "license": "CC0",
+  "source": "sfzinstruments body_percussion",
+  "type": "hits"
+ },
+ "snare.rock": {
+  "layers": [
+   [
+    "snare.rock/v1-1.m4a",
+    "snare.rock/v1-2.m4a"
+   ],
+   [
+    "snare.rock/v2-1.m4a",
+    "snare.rock/v2-2.m4a"
+   ]
+  ],
+  "license": "CC BY 4.0",
+  "source": "MuldjordKit. Drum samples provided by DrumGizmo.org (via FreePats)",
+  "type": "hits"
+ },
+ "snare.studio": {
+  "layers": [
+   [
+    "snare.studio/v1-1.m4a",
+    "snare.studio/v1-2.m4a"
+   ],
+   [
+    "snare.studio/v2-1.m4a",
+    "snare.studio/v2-2.m4a"
+   ]
+  ],
+  "license": "CC0",
+  "source": "Virtuosity Drums (Versilian Studios)",
+  "type": "hits"
+ },
+ "stomp.recorded": {
+  "layers": [
+   [
+    "stomp.recorded/v1-1.m4a",
+    "stomp.recorded/v1-2.m4a"
+   ],
+   [
+    "stomp.recorded/v2-1.m4a",
+    "stomp.recorded/v2-2.m4a"
+   ]
+  ],
+  "license": "CC0",
+  "source": "sfzinstruments body_percussion",
+  "type": "hits"
+ },
+ "tom.rock": {
+  "layers": [
+   [
+    "tom.rock/v1-1.m4a",
+    "tom.rock/v1-2.m4a"
+   ],
+   [
+    "tom.rock/v2-1.m4a",
+    "tom.rock/v2-2.m4a"
+   ]
+  ],
+  "license": "CC BY 4.0",
+  "source": "MuldjordKit. Drum samples provided by DrumGizmo.org (via FreePats)",
+  "type": "hits"
+ },
+ "tom.studio": {
+  "layers": [
+   [
+    "tom.studio/v1-1.m4a",
+    "tom.studio/v1-2.m4a"
+   ],
+   [
+    "tom.studio/v2-1.m4a",
+    "tom.studio/v2-2.m4a"
+   ]
+  ],
+  "license": "CC0",
+  "source": "Virtuosity Drums (Versilian Studios)",
+  "type": "hits"
+ }
+}

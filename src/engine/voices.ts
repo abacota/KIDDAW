@@ -1,11 +1,13 @@
 /**
  * The instruments. Each sound id from song/sounds.ts gets a voice the engine can play.
  *
- * These are synthesized first drafts (no files to download, so they start instantly).
- * Recorded samples for real instruments and body percussion come in a later phase.
+ * Each sound has a synth version, made right here with no files to download, and
+ * many also have recordings (see samples.ts). settings/sounds.txt picks which one plays.
  */
 
 import * as Tone from 'tone';
+import { SOUND_CHOICES } from '../settings/sounds';
+import { loadSampleSet, readySampleSet, SAMPLE_SETS, type LoadedHits, type LoadedNotes } from './samples';
 
 export interface Voice {
   output: Tone.ToneAudioNode;
@@ -143,6 +145,63 @@ const PERCUSSION: Record<string, [number, Build]> = {
     // A clap is a few hands landing a split second apart.
     return (time, v) => [0, 0.009, 0.019].forEach(d => clap.triggerAttackRelease(0.06, t(time + d), v));
   }],
+  openhat: [-6, (out, nodes) => {
+    const hat = new Tone.MetalSynth({
+      envelope: { attack: 0.001, decay: 0.4, release: 0.1 },
+      harmonicity: 5.1,
+      modulationIndex: 32,
+      resonance: 4000,
+      octaves: 1.5,
+      volume: -20,
+    }).connect(out);
+    nodes.push(hat);
+    const t = inOrder();
+    return (time, v) => hat.triggerAttackRelease(250, 0.4, t(time), v);
+  }],
+  lowtom: [-6, (out, nodes) => {
+    const tom = membrane(out, nodes, {
+      pitchDecay: 0.1,
+      octaves: 3,
+      envelope: { attack: 0.001, decay: 0.5, sustain: 0, release: 0.1 },
+    });
+    const t = inOrder();
+    return (time, v) => tom.triggerAttackRelease('C2', 0.45, t(time), v);
+  }],
+  crash: [-10, (out, nodes) => {
+    const cymbal = new Tone.MetalSynth({
+      envelope: { attack: 0.001, decay: 1.6, release: 0.4 },
+      harmonicity: 5.1,
+      modulationIndex: 40,
+      resonance: 3000,
+      octaves: 2,
+      volume: -16,
+    }).connect(out);
+    nodes.push(cymbal);
+    const t = inOrder();
+    return (time, v) => cymbal.triggerAttackRelease(300, 1.6, t(time), v);
+  }],
+  ride: [-10, (out, nodes) => {
+    const cymbal = new Tone.MetalSynth({
+      envelope: { attack: 0.001, decay: 0.9, release: 0.3 },
+      harmonicity: 3.1,
+      modulationIndex: 16,
+      resonance: 6000,
+      octaves: 1,
+      volume: -18,
+    }).connect(out);
+    nodes.push(cymbal);
+    const t = inOrder();
+    return (time, v) => cymbal.triggerAttackRelease(440, 0.9, t(time), v);
+  }],
+  chest: [0, (out, nodes) => {
+    const thump = membrane(out, nodes, {
+      pitchDecay: 0.02,
+      octaves: 1.5,
+      envelope: { attack: 0.002, decay: 0.12, sustain: 0, release: 0.05 },
+    });
+    const t = inOrder();
+    return (time, v) => thump.triggerAttackRelease('A1', 0.1, t(time), v);
+  }],
   snap: [0, (out, nodes) => {
     const snap = noiseHit(out, nodes, { noise: 'white', filter: 'bandpass', frequency: 3000, q: 3, decay: 0.03, db: 6 });
     const t = inOrder();
@@ -202,8 +261,170 @@ const PITCHED: Record<string, () => Tone.PolySynth> = {
     }),
 };
 
-export function createVoice(soundId: string): Voice {
+function synthVoice(soundId: string): Voice {
   const percussion = PERCUSSION[soundId];
   if (percussion) return percussionVoice(...percussion);
   return pitchedVoice((PITCHED[soundId] ?? PITCHED.piano)());
+}
+
+/**
+ * Level for each recorded set, so recordings sit well with each other and with the synths.
+ * The processing script sets every recording to the same peak, so this does the balancing.
+ */
+const RECORDED_TRIM_DB: Record<string, number> = {
+  piano: -2,
+};
+const BEAT_TRIM_DB = -6;
+
+/**
+ * A recorded percussion sound. Until its recording arrives it plays the synth version,
+ * so the first beat never comes out silent.
+ */
+function recordedHits(setId: string, fallback: Voice, trimDb: number): Voice {
+  const out = new Tone.Gain(Tone.dbToGain(trimDb));
+  fallback.output.connect(out);
+  const already = readySampleSet(setId);
+  let loaded: LoadedHits | null = already?.type === 'hits' ? already : null;
+  let alive = true;
+  let turn = 0;
+  if (!loaded) {
+    loadSampleSet(setId)
+      .then(set => {
+        if (alive && set.type === 'hits') loaded = set;
+      })
+      .catch(err => console.warn(`Using the synth ${setId} for now`, err));
+  }
+
+  return {
+    output: out,
+    play(time, pitch, seconds, velocity) {
+      if (!loaded) return fallback.play(time, pitch, seconds, velocity);
+      // Use the softest take that can still play this loud, then set its level, so a
+      // soft note sounds soft (not just quiet) and loudness still follows velocity smoothly.
+      const layers = loaded.layers;
+      const want = velocity * layers[layers.length - 1].peak;
+      const layer = layers.find(l => l.peak >= want * 0.95) ?? layers[layers.length - 1];
+      const buffer = layer.buffers[turn++ % layer.buffers.length];
+      const source = new Tone.ToneBufferSource(buffer).connect(out);
+      source.onended = () => source.dispose();
+      source.start(time, 0, undefined, Math.min(2, want / layer.peak));
+    },
+    stopAll() {},
+    dispose() {
+      alive = false;
+      fallback.dispose();
+      out.dispose();
+    },
+  };
+}
+
+/** A recorded pitched instrument. Notes between the recorded ones are retuned from the nearest. */
+function recordedNotes(setId: string, fallback: Voice, trimDb: number): Voice {
+  const out = new Tone.Gain(Tone.dbToGain(trimDb));
+  fallback.output.connect(out);
+  let sampler: Tone.Sampler | null = null;
+  let alive = true;
+  const build = (set: LoadedNotes) => {
+    const urls = Object.fromEntries(
+      Object.entries(set.notes).map(([midi, buffer]) => [Tone.Frequency(Number(midi), 'midi').toNote(), buffer]),
+    );
+    sampler = new Tone.Sampler({ urls, release: set.release }).connect(out);
+  };
+  const already = readySampleSet(setId);
+  if (already?.type === 'notes') build(already);
+  else {
+    loadSampleSet(setId)
+      .then(set => {
+        if (alive && set.type === 'notes') build(set);
+      })
+      .catch(err => console.warn(`Using the synth ${setId} for now`, err));
+  }
+
+  return {
+    output: out,
+    play(time, pitch, seconds, velocity) {
+      if (!sampler) return fallback.play(time, pitch, seconds, velocity);
+      sampler.triggerAttackRelease(Tone.Frequency(pitch, 'midi').toFrequency(), seconds, time, velocity);
+    },
+    stopAll() {
+      sampler?.releaseAll();
+      fallback.stopAll();
+    },
+    dispose() {
+      alive = false;
+      sampler?.dispose();
+      fallback.dispose();
+      out.dispose();
+    },
+  };
+}
+
+/** Which version a sound plays: an exact version like kick.rock, or the one chosen in settings/sounds.txt. */
+export function versionOf(id: string): string {
+  return id.includes('.') ? id : SOUND_CHOICES.choices[id] ?? `${id}.synth`;
+}
+
+/** Starts downloading a sound's recording, if it has one, before it's needed. */
+export function preloadSound(id: string): void {
+  const version = versionOf(id);
+  if (SAMPLE_SETS[version]) loadSampleSet(version).catch(() => {});
+}
+
+/**
+ * Extra level for each version, in decibels, measured so that every version of a sound
+ * is equally loud (a fair comparison on the Sound check page) and the sounds balance in a
+ * mix: kick and stomp strongest, hi-hat and ride lighter. Measured by ear-like loudness
+ * (the loudest twentieth of a second) at velocity 0.8. Re-measure when a sound changes.
+ */
+const LEVEL_DB: Record<string, number> = {
+  'kick.rock': 3.3, 'kick.studio': 0.4, 'kick.synth': -2.6,
+  'snare.rock': 0.7, 'snare.studio': 2.8, 'snare.synth': 4.2,
+  'hihat.rock': -1.4, 'hihat.studio': -1.8, 'hihat.synth': 9,
+  'openhat.rock': -0.6, 'openhat.studio': -1.4, 'openhat.synth': 3.3,
+  'tom.rock': 2.6, 'tom.studio': 0.3, 'tom.synth': -4.9,
+  'lowtom.rock': 3.1, 'lowtom.studio': 2.2, 'lowtom.synth': -5.6,
+  'crash.rock': -0.1, 'crash.studio': -2, 'crash.synth': 4.5,
+  'ride.rock': -3, 'ride.studio': 2.9, 'ride.synth': 1.6,
+  'stomp.recorded': -2.7, 'stomp.synth': -8.7,
+  'pat.recorded': 2, 'pat.synth': 2.9,
+  'clap.recorded': 7.6, 'clap.synth': -3.8,
+  'snap.recorded': 4.6, 'snap.synth': -2.3,
+  'chest.recorded': 7.3, 'chest.synth': -10.7,
+  'piano.salamander': -0.6, 'piano.synth': 5,
+};
+
+/** Resolves once a sound's recording has downloaded (right away if it has none). Gives up after a few seconds. */
+export function waitForSound(id: string): Promise<void> {
+  const version = versionOf(id);
+  if (!SAMPLE_SETS[version] || readySampleSet(version)) return Promise.resolve();
+  const timeout = new Promise<void>(resolve => setTimeout(resolve, 4000));
+  return Promise.race([loadSampleSet(version).then(() => {}, () => {}), timeout]);
+}
+
+/** id is a sound (kick) or one exact version of it (kick.rock, kick.synth). */
+export function createVoice(id: string): Voice {
+  const soundId = id.split('.')[0];
+  const version = versionOf(id);
+  const set = SAMPLE_SETS[version];
+  const synthDb = LEVEL_DB[`${soundId}.synth`] ?? 0;
+  if (!set) return withLevel(synthVoice(soundId), synthDb);
+  const trim = (RECORDED_TRIM_DB[soundId] ?? (set.type === 'hits' ? BEAT_TRIM_DB : 0)) + (LEVEL_DB[version] ?? 0);
+  // Until the recording arrives, the synth stands in. It plays through the recording's level,
+  // so take that back off: the stand-in comes out at the synth's own level.
+  const standIn = withLevel(synthVoice(soundId), synthDb - trim);
+  return set.type === 'hits' ? recordedHits(version, standIn, trim) : recordedNotes(version, standIn, trim);
+}
+
+function withLevel(voice: Voice, db: number): Voice {
+  if (db === 0) return voice;
+  const level = new Tone.Gain(Tone.dbToGain(db));
+  voice.output.connect(level);
+  return {
+    ...voice,
+    output: level,
+    dispose() {
+      voice.dispose();
+      level.dispose();
+    },
+  };
 }

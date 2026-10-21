@@ -14,9 +14,12 @@
 import * as Tone from 'tone';
 import { TICKS_PER_BEAT, type Song } from '../song/song';
 import { buildTimeline, eventsByWindow, songTickAt, WINDOW, type PlayEvent, type Timeline } from './timeline';
-import { createVoice, type Voice } from './voices';
+import { createVoice, preloadSound, waitForSound, type Voice } from './voices';
 
 export type Status = 'stopped' | 'playing' | 'paused';
+
+/** [tick, length, velocity 0-1, MIDI pitch] for a sound played outside the song. */
+export type PreviewHit = [number, number, number?, number?];
 
 export interface EngineState {
   status: Status;
@@ -89,6 +92,7 @@ class Engine {
     this.song = song;
     this.timeline = buildTimeline(song);
     this.windows = eventsByWindow(this.timeline.events);
+    song.layers.forEach(l => preloadSound(l.sound));
     if (this.context) {
       this.syncTracks();
       this.context.transport.bpm.value = song.tempo;
@@ -124,24 +128,33 @@ class Engine {
   }
 
   /**
-   * Plays a sound right now, outside the song: tapping a row's name, or hearing
-   * a beat just placed while the music is stopped. hits are [tick, length] from now.
+   * Plays sounds right now, outside the song: tapping a row's name, hearing a beat
+   * just placed while the music is stopped, or comparing sounds on the Sound check page.
+   * Each hit is [tick, length, velocity, pitch], counted from now. Parts play together.
    * Like play(), call it straight from a tap or click.
    */
-  async preview(soundId: string, hits: [number, number][] = [[0, TICKS_PER_BEAT]], pitch = 60): Promise<void> {
+  async previewTogether(parts: { sound: string; hits: PreviewHit[] }[]): Promise<void> {
     await Tone.start();
     const context = this.buildMaster();
-    let voice = this.previewVoices.get(soundId);
-    if (!voice) {
-      voice = createVoice(soundId);
-      voice.output.connect(this.master!);
-      this.previewVoices.set(soundId, voice);
-    }
+    // Wait for recordings, so a first tap plays the recording and not its stand-in.
+    await Promise.all(parts.map(p => waitForSound(p.sound)));
     const secondsPerTick = 60 / (this.song?.tempo ?? 100) / TICKS_PER_BEAT;
-    const now = context.immediate() + 0.02;
-    for (const [tick, length] of hits) {
-      voice.play(now + tick * secondsPerTick, pitch, length * secondsPerTick, 0.8);
+    const now = context.immediate() + 0.03;
+    for (const { sound, hits } of parts) {
+      let voice = this.previewVoices.get(sound);
+      if (!voice) {
+        voice = createVoice(sound);
+        voice.output.connect(this.master!);
+        this.previewVoices.set(sound, voice);
+      }
+      for (const [tick, length, velocity, pitch] of hits) {
+        voice.play(now + tick * secondsPerTick, pitch ?? 60, length * secondsPerTick, velocity ?? 0.8);
+      }
     }
+  }
+
+  preview(sound: string, hits: PreviewHit[] = [[0, TICKS_PER_BEAT]]): Promise<void> {
+    return this.previewTogether([{ sound, hits }]);
   }
 
   pause(): void {

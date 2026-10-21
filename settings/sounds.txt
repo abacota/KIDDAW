@@ -1,0 +1,25 @@
+# KIDDAW sound choices
+#
+# You can change this file without touching any code.
+#
+# Which recording each sound uses. Hear every choice side by side on the
+# Sound check page (kiddaw.vercel.app/sound-check), then write your pick here.
+# Each line is:   sound: choice
+# "synth" means KIDDAW makes the sound itself instead of playing a recording.
+
+kick: studio
+snare: studio
+hihat: studio
+openhat: studio
+tom: studio
+lowtom: studio
+crash: studio
+ride: studio
+
+stomp: recorded
+pat: recorded
+clap: recorded
+snap: recorded
+chest: recorded
+
+piano: salamander

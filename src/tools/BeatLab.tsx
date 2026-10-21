@@ -34,10 +34,15 @@ const SOUND_COLORS: Record<string, string> = {
   pat: 'bg-amber-400',
   clap: 'bg-rose-500',
   snap: 'bg-violet-500',
+  chest: 'bg-red-700',
   kick: 'bg-blue-600',
   snare: 'bg-teal-500',
   hihat: 'bg-sky-400',
+  openhat: 'bg-cyan-300',
   tom: 'bg-indigo-500',
+  lowtom: 'bg-indigo-800',
+  crash: 'bg-yellow-400',
+  ride: 'bg-lime-500',
 };
 
 const TEMPO_LABELS: Record<TempoName, [string, string]> = { slow: ['🐢', 'Slow'], medium: ['🚶', 'Medium'], fast: ['🐇', 'Fast'] };

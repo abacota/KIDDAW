@@ -2,6 +2,7 @@
  * Which screen a link opens:
  *   /k-1, /2-3, /4-5, /studio   Beat Lab at that level (the links students use)
  *   /check                      the foundation check page
+ *   /sound-check                hear every version of every sound and pick favorites
  *   /                           Adam's page of level links
  */
 
@@ -9,10 +10,13 @@ import { useState } from 'react';
 import { LEVELS, levelFromPath } from '../settings/levels';
 import { BeatLab } from './BeatLab';
 import { FoundationCheck } from './FoundationCheck';
+import { SoundCheck } from './SoundCheck';
 
 export function App() {
   const path = window.location.pathname;
-  if (path.replace(/\/+$/, '') === '/check') return <FoundationCheck />;
+  const route = path.replace(/\/+$/, '');
+  if (route === '/check') return <FoundationCheck />;
+  if (route === '/sound-check') return <SoundCheck />;
   const level = levelFromPath(path);
   if (level) return <BeatLab level={level} />;
   return <TeacherHome />;
@@ -68,6 +72,8 @@ function TeacherHome() {
         </ul>
 
         <p className="text-sm text-slate-500">
+          <a href="/sound-check" className="underline">Sound check</a>: hear every version of every sound and pick favorites.
+          <br />
           <a href="/check" className="underline">Foundation check</a>: test sound, song links and saving on a Chromebook.
         </p>
       </main>
