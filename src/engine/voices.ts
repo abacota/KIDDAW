@@ -209,9 +209,12 @@ const PERCUSSION: Record<string, [number, Build]> = {
   }],
 };
 
-function pitchedVoice(synth: Tone.PolySynth): Voice {
+/** A playable synth, optionally run through effects (a filter, a vibrato) on its way out. */
+function pitchedVoice(synth: Tone.PolySynth, effects: Tone.ToneAudioNode[] = []): Voice {
+  if (effects.length) synth.chain(...effects);
+  const output = effects[effects.length - 1] ?? synth;
   return {
-    output: synth,
+    output,
     play(time, pitch, seconds, velocity) {
       synth.triggerAttackRelease(Tone.Frequency(pitch, 'midi').toFrequency(), seconds, time, velocity);
     },
@@ -220,51 +223,148 @@ function pitchedVoice(synth: Tone.PolySynth): Voice {
     },
     dispose() {
       synth.dispose();
+      effects.forEach(e => e.dispose());
     },
   };
 }
 
-const PITCHED: Record<string, () => Tone.PolySynth> = {
+const lowpass = (frequency: number, Q = 0.7) => new Tone.Filter({ type: 'lowpass', frequency, Q });
+
+/**
+ * The synth instruments. The electronic ones (chip, lead, pad, pluck, bell, synth bass)
+ * are instruments in their own right. The rest stand in for a recording while it downloads.
+ */
+const PITCHED: Record<string, () => Voice> = {
   xylophone: () =>
-    new Tone.PolySynth(Tone.FMSynth, {
-      harmonicity: 3.5,
-      modulationIndex: 3,
-      oscillator: { type: 'sine' },
-      envelope: { attack: 0.001, decay: 0.4, sustain: 0, release: 0.3 },
-      modulation: { type: 'sine' },
-      modulationEnvelope: { attack: 0.001, decay: 0.08, sustain: 0, release: 0.05 },
-      volume: 0,
-    }),
+    pitchedVoice(
+      new Tone.PolySynth(Tone.FMSynth, {
+        harmonicity: 3.5,
+        modulationIndex: 3,
+        oscillator: { type: 'sine' },
+        envelope: { attack: 0.001, decay: 0.4, sustain: 0, release: 0.3 },
+        modulation: { type: 'sine' },
+        modulationEnvelope: { attack: 0.001, decay: 0.08, sustain: 0, release: 0.05 },
+      }),
+    ),
   piano: () =>
-    new Tone.PolySynth(Tone.FMSynth, {
-      harmonicity: 1,
-      modulationIndex: 1.2,
-      oscillator: { type: 'sine' },
-      envelope: { attack: 0.003, decay: 1.4, sustain: 0.15, release: 0.9 },
-      modulation: { type: 'triangle' },
-      modulationEnvelope: { attack: 0.002, decay: 0.5, sustain: 0.1, release: 0.5 },
-      volume: -6,
-    }),
-  bass: () =>
-    new Tone.PolySynth(Tone.MonoSynth, {
-      oscillator: { type: 'sawtooth' },
-      filter: { type: 'lowpass', Q: 1 },
-      filterEnvelope: { attack: 0.005, decay: 0.25, sustain: 0.4, release: 0.3, baseFrequency: 110, octaves: 2.5 },
-      envelope: { attack: 0.01, decay: 0.3, sustain: 0.7, release: 0.3 },
-      volume: -16,
-    }),
+    pitchedVoice(
+      new Tone.PolySynth(Tone.FMSynth, {
+        harmonicity: 1,
+        modulationIndex: 1.2,
+        oscillator: { type: 'sine' },
+        envelope: { attack: 0.003, decay: 1.4, sustain: 0.15, release: 0.9 },
+        modulation: { type: 'triangle' },
+        modulationEnvelope: { attack: 0.002, decay: 0.5, sustain: 0.1, release: 0.5 },
+        volume: -6,
+      }),
+    ),
+  // Chip: the square-ish "pulse" wave of old game consoles, with a little vibrato.
   chip: () =>
-    new Tone.PolySynth(Tone.Synth, {
-      oscillator: { type: 'square' },
-      envelope: { attack: 0.001, decay: 0.1, sustain: 0.35, release: 0.08 },
-      volume: -16,
-    }),
+    pitchedVoice(
+      new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'pulse', width: 0.25 },
+        envelope: { attack: 0.002, decay: 0.12, sustain: 0.55, release: 0.06 },
+        volume: -18,
+      }),
+      [new Tone.Vibrato({ frequency: 5.5, depth: 0.06 })],
+    ),
+  // Lead: two slightly detuned saw waves, softened, for melodies that sing out.
+  lead: () =>
+    pitchedVoice(
+      new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'fatsawtooth', count: 2, spread: 14 },
+        envelope: { attack: 0.01, decay: 0.25, sustain: 0.7, release: 0.25 },
+        volume: -20,
+      }),
+      [lowpass(3200, 1)],
+    ),
+  // Pad: a wide, slow, soft cloud for holding chords.
+  pad: () =>
+    pitchedVoice(
+      new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'fatsawtooth', count: 3, spread: 28 },
+        envelope: { attack: 0.6, decay: 0.8, sustain: 0.8, release: 1.6 },
+        volume: -24,
+      }),
+      [lowpass(1400)],
+    ),
+  // Pluck: a short, bright pick, like a harp or a synth guitar.
+  pluck: () =>
+    pitchedVoice(
+      new Tone.PolySynth(Tone.FMSynth, {
+        harmonicity: 2,
+        modulationIndex: 4,
+        oscillator: { type: 'triangle' },
+        envelope: { attack: 0.001, decay: 0.5, sustain: 0, release: 0.3 },
+        modulation: { type: 'sine' },
+        modulationEnvelope: { attack: 0.001, decay: 0.12, sustain: 0, release: 0.1 },
+        volume: -6,
+      }),
+    ),
+  // Bell: a ringing metallic tone with a long fade.
+  bell: () =>
+    pitchedVoice(
+      new Tone.PolySynth(Tone.FMSynth, {
+        harmonicity: 3.01,
+        modulationIndex: 9,
+        oscillator: { type: 'sine' },
+        envelope: { attack: 0.001, decay: 2.2, sustain: 0, release: 1.8 },
+        modulation: { type: 'sine' },
+        modulationEnvelope: { attack: 0.001, decay: 1.2, sustain: 0, release: 1 },
+        volume: -10,
+      }),
+    ),
+  // Synth bass: a round, punchy low saw.
+  bass: () =>
+    pitchedVoice(
+      new Tone.PolySynth(Tone.MonoSynth, {
+        oscillator: { type: 'fatsawtooth', count: 2, spread: 10 },
+        filter: { type: 'lowpass', Q: 1.5 },
+        filterEnvelope: { attack: 0.004, decay: 0.22, sustain: 0.35, release: 0.3, baseFrequency: 90, octaves: 3 },
+        envelope: { attack: 0.005, decay: 0.3, sustain: 0.75, release: 0.25 },
+        volume: -16,
+      }),
+    ),
+  // Stand-ins for recorded instruments, heard only while a recording downloads.
+  strings: () =>
+    pitchedVoice(
+      new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'fatsawtooth', count: 3, spread: 12 },
+        envelope: { attack: 0.08, decay: 0.3, sustain: 0.8, release: 0.4 },
+        volume: -22,
+      }),
+      [lowpass(2400)],
+    ),
+  winds: () =>
+    pitchedVoice(
+      new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'triangle' },
+        envelope: { attack: 0.04, decay: 0.2, sustain: 0.8, release: 0.2 },
+        volume: -8,
+      }),
+    ),
+};
+
+/** Which synth stands in for each recorded instrument. */
+const STAND_IN: Record<string, string> = {
+  violin: 'strings',
+  cello: 'strings',
+  doublebass: 'pluck',
+  guitar: 'pluck',
+  steelguitar: 'pluck',
+  ebass: 'bass',
+  flute: 'winds',
+  clarinet: 'winds',
+  recorder: 'winds',
+  trumpet: 'lead',
+  horn: 'winds',
+  trombone: 'lead',
 };
 
 function synthVoice(soundId: string): Voice {
   const percussion = PERCUSSION[soundId];
   if (percussion) return percussionVoice(...percussion);
-  return pitchedVoice((PITCHED[soundId] ?? PITCHED.piano)());
+  return (PITCHED[soundId] ?? PITCHED[STAND_IN[soundId]] ?? PITCHED.piano)();
 }
 
 /**
@@ -359,9 +459,13 @@ function recordedNotes(setId: string, fallback: Voice, trimDb: number): Voice {
   };
 }
 
-/** Which version a sound plays: an exact version like kick.rock, or the one chosen in settings/sounds.txt. */
+/**
+ * Which version a sound plays: an exact version like kick.rock, the one chosen in
+ * settings/sounds.txt, or else its first recording, or else its synth.
+ */
 export function versionOf(id: string): string {
-  return id.includes('.') ? id : SOUND_CHOICES.choices[id] ?? `${id}.synth`;
+  if (id.includes('.')) return id;
+  return SOUND_CHOICES.choices[id] ?? Object.keys(SAMPLE_SETS).find(v => v.startsWith(`${id}.`)) ?? `${id}.synth`;
 }
 
 /** Starts downloading a sound's recording, if it has one, before it's needed. */
@@ -373,8 +477,10 @@ export function preloadSound(id: string): void {
 /**
  * Extra level for each version, in decibels, measured so that every version of a sound
  * is equally loud (a fair comparison on the Sound check page) and the sounds balance in a
- * mix: kick and stomp strongest, hi-hat and ride lighter. Measured by ear-like loudness
- * (the loudest twentieth of a second) at velocity 0.8. Re-measure when a sound changes.
+ * mix: kick and stomp strongest, hi-hat and ride lighter; melodies even, basses a touch stronger,
+ * pad and bell a little behind. Measured by ear-like loudness at velocity 0.8 (percussion over the
+ * loudest twentieth of a second, pitched instruments over 0.3 seconds, after samples.ts evens out
+ * each instrument's notes). Re-measure when a sound changes.
  */
 const LEVEL_DB: Record<string, number> = {
   'kick.rock': 3.3, 'kick.studio': 0.4, 'kick.synth': -2.6,
@@ -390,7 +496,27 @@ const LEVEL_DB: Record<string, number> = {
   'clap.recorded': 7.6, 'clap.synth': -3.8,
   'snap.recorded': 4.6, 'snap.synth': -2.3,
   'chest.recorded': 7.3, 'chest.synth': -10.7,
-  'piano.salamander': -0.6, 'piano.synth': 5,
+  'piano.salamander': -0.4, 'piano.synth': 5.6,
+  // Pitched instruments: loudest 0.3 seconds of a note in the middle of their range.
+  'violin.recorded': -2.6, 'violin.synth': 13.6,
+  'cello.recorded': -4.4, 'cello.synth': 12.2,
+  'doublebass.recorded': -1.2, 'doublebass.synth': 13.3,
+  'guitar.recorded': -6.8, 'guitar.synth': 12.4,
+  'steelguitar.recorded': -0.2, 'steelguitar.synth': 12.4,
+  'ebass.recorded': -7.3, 'ebass.synth': 10.6,
+  'flute.recorded': 3.4, 'flute.synth': -3.5,
+  'clarinet.recorded': -2.9, 'clarinet.synth': -3.5,
+  'recorder.recorded': -1.7, 'recorder.synth': -3.5,
+  'trumpet.recorded': -3.2, 'trumpet.synth': 15.4,
+  'horn.recorded': -3.7, 'horn.synth': -3.6,
+  'trombone.recorded': 0.0, 'trombone.synth': 14.5,
+  'xylophone.synth': 4.7,
+  'chip.synth': 4.7,
+  'lead.synth': 15.7,
+  'pad.synth': 12.8,
+  'pluck.synth': 12.4,
+  'bell.synth': 7.6,
+  'bass.synth': 10.6,
 };
 
 /** Resolves once a sound's recording has downloaded (right away if it has none). Gives up after a few seconds. */

@@ -23,3 +23,16 @@ snap: recorded
 chest: recorded
 
 piano: salamander
+
+violin: recorded
+cello: recorded
+doublebass: recorded
+guitar: recorded
+steelguitar: recorded
+ebass: recorded
+flute: recorded
+clarinet: recorded
+recorder: recorded
+trumpet: recorded
+horn: recorded
+trombone: recorded

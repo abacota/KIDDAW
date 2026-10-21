@@ -6,7 +6,7 @@
 #
 # Usage: python3 -I process.py spec.json downloads_dir output_dir manifest.json
 
-import array, json, math, os, subprocess, sys, tempfile, wave
+import array, json, math, os, subprocess, sys, tempfile, wave  # noqa: F401
 
 spec_path, dl_root, out_root, manifest_path = sys.argv[1:5]
 spec = json.load(open(spec_path))
@@ -18,9 +18,29 @@ PEAK = 10 ** (-1 / 20)  # -1 dBFS
 def decode(src):
     dst = os.path.join(tmp, "decoded.wav")
     subprocess.run(["afconvert", "-f", "WAVE", "-d", f"LEI16@{RATE}", "-c", "1", src, dst], check=True)
-    with wave.open(dst) as w:
-        data = array.array("h", w.readframes(w.getnframes()))
-    return [x / 32768 for x in data]
+    # Read the 16-bit samples straight from the data chunk (some files use a header Python's wave module refuses).
+    raw = open(dst, "rb").read()
+    pos = 12
+    while pos + 8 <= len(raw):
+        size = int.from_bytes(raw[pos + 4:pos + 8], "little")
+        if raw[pos:pos + 4] == b"data":
+            body = raw[pos + 8:pos + 8 + size]
+            return [x / 32768 for x in array.array("h", body[:len(body) - len(body) % 2])]
+        pos += 8 + size + (size & 1)
+    raise ValueError(f"no audio in {src}")
+
+
+def retune(x, semitones):
+    """Shifts pitch by resampling: positive semitones raises it."""
+    rate = 2 ** (semitones / 12)
+    out = []
+    i = 0.0
+    while i < len(x) - 1:
+        j = int(i)
+        frac = i - j
+        out.append(x[j] * (1 - frac) + x[j + 1] * frac)
+        i += rate
+    return out
 
 
 def tidy(x, max_seconds, tail_db, fade_seconds):
@@ -40,6 +60,40 @@ def tidy(x, max_seconds, tail_db, fade_seconds):
     for i in range(fade):
         y[len(y) - fade + i] *= 0.5 * (1 + math.cos(math.pi * i / fade))
     return y
+
+
+def detect_midi(x):
+    """Measures a recording's pitch (as a fractional MIDI number) from a steady stretch after the attack."""
+    start = min(len(x) // 3, int(0.3 * RATE))
+    seg = x[start:start + 8192:2]
+    sr = RATE / 2
+    window = 2048
+    tau_max = min(int(sr / 28), len(seg) - window - 1)
+    if tau_max < 20:
+        return None
+    d = [0.0] * (tau_max + 1)
+    for tau in range(1, tau_max + 1):
+        total = 0.0
+        for j in range(window):
+            diff = seg[j] - seg[j + tau]
+            total += diff * diff
+        d[tau] = total
+    cm = [1.0] * (tau_max + 1)
+    running = 0.0
+    for tau in range(1, tau_max + 1):
+        running += d[tau]
+        cm[tau] = d[tau] * tau / running if running else 1.0
+    best = None
+    for tau in range(int(sr / 2500), tau_max):
+        if cm[tau] < 0.2 and cm[tau] <= cm[tau + 1]:
+            best = tau
+            break
+    if best is None:
+        best = min(range(int(sr / 2500), tau_max), key=lambda t: cm[t])
+    a, b, c = cm[best - 1], cm[best], cm[best + 1]
+    denom = a - 2 * b + c
+    period = best + (0.5 * (a - c) / denom if denom else 0)
+    return 69 + 12 * math.log2(sr / period / 440)
 
 
 def encode(samples, gain, dst, bitrate):
@@ -70,7 +124,29 @@ for set_id, s in spec.items():
             entry_layers.append(files)
         manifest[set_id] = {"type": "hits", "layers": entry_layers, "source": s["source"], "license": s["license"]}
     else:
-        clips = {midi: tidy(decode(os.path.join(dl_root, f)), **opts) for midi, f in s["notes"].items()}
+        clips = {}
+        for midi, f in s["notes"].items():
+            raw = decode(os.path.join(dl_root, f))
+            key = int(midi)
+            if s.get("detect_pitch"):
+                # Libraries disagree about octave names, so trust the measured pitch for the octave
+                # whenever its note name agrees with the file's.
+                found = detect_midi(raw)
+                if found is None or round(found) % 12 != key % 12:
+                    print(f"  {set_id} {f}: named {key}, measured {found and round(found, 2)}; left out")
+                    continue
+                key = round(found)
+                off = (found - key) * 100
+                if abs(off) > 10:
+                    # Retune notes that are noticeably out of tune, so chords sound clean.
+                    raw = retune(raw, -off / 100)
+                    if abs(off) > 25:
+                        print(f"  {set_id} {f}: was {off:+.0f} cents out of tune; retuned")
+            if key in clips:
+                print(f"  {set_id} {f}: two files measured as note {key}; kept the first")
+                continue
+            clips[key] = tidy(raw, **opts)
+        clips = {str(k): v for k, v in sorted(clips.items())}
         loudest = max(max(abs(v) for v in c) for c in clips.values())
         notes = {}
         for midi, clip in clips.items():
@@ -81,6 +157,7 @@ for set_id, s in spec.items():
                             "source": s["source"], "license": s["license"]}
     size = sum(os.path.getsize(os.path.join(out_root, f)) for f in
                ([f for l in manifest[set_id].get("layers", []) for f in l] + list(manifest[set_id].get("notes", {}).values())))
-    print(f"{set_id}: {size // 1024} KB")
+    print(f"{set_id}: {size // 1024} KB", flush=True)
+    json.dump(manifest, open(manifest_path, "w"), indent=1, sort_keys=True)
 
 json.dump(manifest, open(manifest_path, "w"), indent=1, sort_keys=True)

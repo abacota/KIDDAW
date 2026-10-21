@@ -62,6 +62,38 @@ function trimStart(buffer: AudioBuffer): AudioBuffer {
   return trimmed;
 }
 
+/** How loud a note is, the way an ear judges a held note: its loudest 0.3 seconds, in decibels. */
+function loudnessOf(buffer: AudioBuffer): number {
+  const data = buffer.getChannelData(0);
+  const window = Math.round(buffer.sampleRate * 0.3);
+  const hop = Math.round(window / 3);
+  let best = 1e-12;
+  for (let start = 0; start < Math.max(1, data.length - window); start += hop) {
+    let sum = 0;
+    for (let i = start; i < Math.min(data.length, start + window); i += 4) sum += data[i] * data[i];
+    best = Math.max(best, sum / (window / 4));
+  }
+  return 10 * Math.log10(best);
+}
+
+/**
+ * Recordings keep each note's natural loudness, so a flute's high notes can be much louder
+ * than its low ones. This moves every note most of the way toward the instrument's middle
+ * level (a little natural difference stays), so a melody sounds even from bottom to top.
+ */
+const EVENNESS = 0.8;
+function evenOut(buffers: AudioBuffer[]): void {
+  const levels = buffers.map(loudnessOf);
+  const middle = [...levels].sort((a, b) => a - b)[Math.floor(levels.length / 2)];
+  buffers.forEach((buffer, i) => {
+    const gain = Math.pow(10, ((middle - levels[i]) * EVENNESS) / 20);
+    for (let c = 0; c < buffer.numberOfChannels; c++) {
+      const data = buffer.getChannelData(c);
+      for (let j = 0; j < data.length; j++) data[j] *= gain;
+    }
+  });
+}
+
 function peakOf(buffers: AudioBuffer[]): number {
   let peak = 0;
   for (const b of buffers) for (const v of b.getChannelData(0)) peak = Math.max(peak, Math.abs(v));
@@ -89,7 +121,10 @@ export function loadSampleSet(id: string): Promise<LoadedHits | LoadedNotes> {
           layers: layers.map(buffers => ({ buffers, peak: peakOf(buffers) })),
         }))
       : Promise.all(Object.entries(set.notes).map(async ([midi, file]) => [midi, await fetchBuffer(file)] as const)).then(
-          entries => ({ type: 'notes' as const, notes: Object.fromEntries(entries), release: set.release }),
+          entries => {
+            evenOut(entries.map(([, buffer]) => buffer));
+            return { type: 'notes' as const, notes: Object.fromEntries(entries), release: set.release };
+          },
         );
 
   // A failed download can be tried again later, for example when the wifi comes back.

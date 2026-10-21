@@ -17,6 +17,11 @@ describe('sound choices', () => {
     expect(problems[0]).toMatch(/kick has no "jazz". Choices: .*studio.*synth/);
   });
 
+  it('every sound with a recording is chosen in the settings file', () => {
+    const recorded = new Set(Object.keys(sampleSets).map(id => id.split('.')[0]));
+    expect([...recorded].filter(s => !SOUND_CHOICES.choices[s])).toEqual([]);
+  });
+
   it('synth is always a choice', () => {
     expect(parseSoundChoices('kick: synth').choices.kick).toBe('kick.synth');
   });

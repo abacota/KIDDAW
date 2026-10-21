@@ -6,8 +6,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { engine, type PreviewHit } from '../engine/engine';
 import { SAMPLE_SETS } from '../engine/samples';
-import { preloadSound } from '../engine/voices';
-import { SOUND_CHOICES, variantsOf } from '../settings/sounds';
+import { preloadSound, versionOf } from '../engine/voices';
+import { variantsOf } from '../settings/sounds';
 import { soundById } from '../song/sounds';
 import { TICKS_PER_BEAT as BEAT } from '../song/song';
 
@@ -42,6 +42,37 @@ const PIANO: PreviewHit[] = [
   ),
 ];
 
+/** Where each pitched instrument sounds best, as a MIDI note: its phrase starts here. */
+const HOME_NOTE: Record<string, number> = {
+  violin: 67, cello: 48, doublebass: 36, flute: 72, clarinet: 60, recorder: 72, trumpet: 60, horn: 53, trombone: 48,
+  guitar: 48, steelguitar: 48, ebass: 36, chip: 72, lead: 72, pad: 60, pluck: 60, bell: 72, bass: 36,
+};
+
+const BASS_LINES = new Set(['doublebass', 'ebass', 'bass']);
+const SYNTH_IS_A_CHOICE = new Set(['kick', 'snare', 'hihat', 'openhat', 'tom', 'lowtom', 'crash', 'ride', 'stomp', 'pat', 'clap', 'snap', 'chest', 'piano']);
+const STRUMMED = new Set(['guitar', 'steelguitar']);
+
+/** A short phrase that suits the instrument: a melody, a bass line, a strum or a held chord. */
+function phraseFor(sound: string): PreviewHit[] {
+  if (sound === 'piano') return PIANO;
+  if (PHRASES[sound]) return PHRASES[sound];
+  const home = HOME_NOTE[sound] ?? 60;
+  const note = (beat: number, length: number, step: number, velocity = 0.75): PreviewHit => [beat * BEAT, length * BEAT, velocity, home + step];
+  if (sound === 'pad') return [0, 4, 7, 12].map(step => note(0, 4, step, 0.6));
+  if (BASS_LINES.has(sound)) return [[0, 0], [1, 0], [2, 7], [3, 7], [4, 5], [5, 5], [6, 7]].map(([b, st], i) => note(b, i === 6 ? 2 : 1, st));
+  if (STRUMMED.has(sound)) {
+    const picked = [0, 4, 7, 12, 16, 12, 7, 4].map((step, i) => note(i / 2, 0.5, step, 0.7));
+    const strum = [0, 4, 7, 12, 16].map((step, i): PreviewHit => [4 * BEAT + i * 4, 3 * BEAT, 0.8, home + step]);
+    return [...picked, ...strum];
+  }
+  return [
+    ...[0, 2, 4, 5, 7].map((step, i) => note(i / 2, 0.5, step, 0.55 + i * 0.07)),
+    note(2.5, 1, 7, 0.85),
+    note(3.5, 1, 4, 0.7),
+    note(4.5, 2, 0, 0.6),
+  ];
+}
+
 /** Two bars of a basic rock beat, for hearing a whole kit at once. */
 function groove(kit: string): { sound: string; hits: PreviewHit[] }[] {
   const v = (sound: string) => (kit === 'synth' ? `${sound}.synth` : `${sound}.${kit}`);
@@ -58,6 +89,9 @@ const GROUPS: { title: string; sounds: string[] }[] = [
   { title: 'Drum kit', sounds: ['kick', 'snare', 'hihat', 'openhat', 'tom', 'lowtom', 'crash', 'ride'] },
   { title: 'Body percussion', sounds: ['stomp', 'pat', 'clap', 'snap', 'chest'] },
   { title: 'Piano', sounds: ['piano'] },
+  { title: 'Orchestra and band', sounds: ['violin', 'cello', 'doublebass', 'flute', 'clarinet', 'recorder', 'trumpet', 'horn', 'trombone'] },
+  { title: 'Guitar and bass', sounds: ['guitar', 'steelguitar', 'ebass'] },
+  { title: 'Synths', sounds: ['chip', 'lead', 'pad', 'pluck', 'bell', 'bass'] },
 ];
 
 const VERSION_NAMES: Record<string, string> = {
@@ -105,7 +139,8 @@ export function SoundCheck() {
   const pickLines = useMemo(
     () =>
       GROUPS.flatMap(g => g.sounds)
-        .map(s => `${s}: ${(picks[s] ?? SOUND_CHOICES.choices[s] ?? `${s}.synth`).split('.')[1]}`)
+        .filter(s => variantsOf(s).length > 0)
+        .map(s => `${s}: ${(picks[s] ?? versionOf(s)).split('.')[1]}`)
         .join('\n'),
     [picks],
   );
@@ -156,9 +191,12 @@ export function SoundCheck() {
             <h2 className="mb-3 text-xl font-black">{group.title}</h2>
             <div className="divide-y divide-slate-100">
               {group.sounds.map(sound => {
-                const versions = [...variantsOf(sound), `${sound}.synth`];
-                const chosen = picks[sound] ?? SOUND_CHOICES.choices[sound] ?? `${sound}.synth`;
-                const hits = sound === 'piano' ? PIANO : PHRASES[sound];
+                const recorded = variantsOf(sound);
+                // For orchestra and band, the synth only stands in while a recording downloads, so it isn't a choice.
+                const versions = recorded.length === 0 || SYNTH_IS_A_CHOICE.has(sound) ? [...recorded, `${sound}.synth`] : recorded;
+                const chosen = picks[sound] ?? versionOf(sound);
+                const hits = phraseFor(sound);
+                const onlyOne = versions.length === 1;
                 return (
                   <div key={sound} className="flex flex-wrap items-center gap-2 py-3">
                     <span className="w-32 font-bold">{soundById(sound)?.name ?? sound}</span>
@@ -171,9 +209,9 @@ export function SoundCheck() {
                             (playing === version ? 'bg-amber-400' : 'bg-white hover:bg-amber-50')
                           }
                         >
-                          ▶ {versionName(version)}
+                          ▶ {onlyOne ? 'Listen' : versionName(version)}
                         </button>
-                        <button
+                        {!onlyOne && <button
                           onClick={() => setPicks(p => ({ ...p, [sound]: version }))}
                           aria-pressed={chosen === version}
                           title="Pick this one"
@@ -183,7 +221,7 @@ export function SoundCheck() {
                           }
                         >
                           {chosen === version ? '✓ Pick' : 'Pick'}
-                        </button>
+                        </button>}
                       </div>
                     ))}
                   </div>

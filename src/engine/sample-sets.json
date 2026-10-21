@@ -1,4 +1,23 @@
 {
+ "cello.recorded": {
+  "license": "CC0",
+  "notes": {
+   "36": "cello.recorded/36.m4a",
+   "40": "cello.recorded/40.m4a",
+   "43": "cello.recorded/43.m4a",
+   "50": "cello.recorded/50.m4a",
+   "53": "cello.recorded/53.m4a",
+   "57": "cello.recorded/57.m4a",
+   "60": "cello.recorded/60.m4a",
+   "64": "cello.recorded/64.m4a",
+   "71": "cello.recorded/71.m4a",
+   "74": "cello.recorded/74.m4a",
+   "77": "cello.recorded/77.m4a"
+  },
+  "release": 0.35,
+  "source": "VSCO 2 Community Edition (Versilian Studios)",
+  "type": "notes"
+ },
  "chest.recorded": {
   "layers": [
    [
@@ -28,6 +47,24 @@
   "license": "CC0",
   "source": "sfzinstruments body_percussion",
   "type": "hits"
+ },
+ "clarinet.recorded": {
+  "license": "CC0",
+  "notes": {
+   "50": "clarinet.recorded/50.m4a",
+   "53": "clarinet.recorded/53.m4a",
+   "58": "clarinet.recorded/58.m4a",
+   "62": "clarinet.recorded/62.m4a",
+   "65": "clarinet.recorded/65.m4a",
+   "70": "clarinet.recorded/70.m4a",
+   "74": "clarinet.recorded/74.m4a",
+   "77": "clarinet.recorded/77.m4a",
+   "82": "clarinet.recorded/82.m4a",
+   "86": "clarinet.recorded/86.m4a"
+  },
+  "release": 0.35,
+  "source": "VSCO 2 Community Edition (Versilian Studios)",
+  "type": "notes"
  },
  "crash.rock": {
   "layers": [
@@ -59,6 +96,76 @@
   "source": "Virtuosity Drums (Versilian Studios)",
   "type": "hits"
  },
+ "doublebass.recorded": {
+  "license": "CC0",
+  "notes": {
+   "24": "doublebass.recorded/24.m4a",
+   "27": "doublebass.recorded/27.m4a",
+   "31": "doublebass.recorded/31.m4a",
+   "34": "doublebass.recorded/34.m4a",
+   "38": "doublebass.recorded/38.m4a",
+   "41": "doublebass.recorded/41.m4a",
+   "45": "doublebass.recorded/45.m4a",
+   "48": "doublebass.recorded/48.m4a",
+   "55": "doublebass.recorded/55.m4a",
+   "57": "doublebass.recorded/57.m4a",
+   "64": "doublebass.recorded/64.m4a"
+  },
+  "release": 0.5,
+  "source": "D. Smolken double bass (via sfzinstruments)",
+  "type": "notes"
+ },
+ "ebass.recorded": {
+  "license": "CC0",
+  "notes": {
+   "28": "ebass.recorded/28.m4a",
+   "31": "ebass.recorded/31.m4a",
+   "34": "ebass.recorded/34.m4a",
+   "37": "ebass.recorded/37.m4a",
+   "39": "ebass.recorded/39.m4a"
+  },
+  "release": 0.5,
+  "source": "FreePats Electric Bass YR",
+  "type": "notes"
+ },
+ "flute.recorded": {
+  "license": "CC0",
+  "notes": {
+   "60": "flute.recorded/60.m4a",
+   "64": "flute.recorded/64.m4a",
+   "69": "flute.recorded/69.m4a",
+   "72": "flute.recorded/72.m4a",
+   "76": "flute.recorded/76.m4a",
+   "81": "flute.recorded/81.m4a",
+   "84": "flute.recorded/84.m4a",
+   "88": "flute.recorded/88.m4a",
+   "93": "flute.recorded/93.m4a",
+   "96": "flute.recorded/96.m4a"
+  },
+  "release": 0.35,
+  "source": "VSCO 2 Community Edition (Versilian Studios)",
+  "type": "notes"
+ },
+ "guitar.recorded": {
+  "license": "CC0",
+  "notes": {
+   "31": "guitar.recorded/31.m4a",
+   "35": "guitar.recorded/35.m4a",
+   "40": "guitar.recorded/40.m4a",
+   "47": "guitar.recorded/47.m4a",
+   "53": "guitar.recorded/53.m4a",
+   "57": "guitar.recorded/57.m4a",
+   "62": "guitar.recorded/62.m4a",
+   "66": "guitar.recorded/66.m4a",
+   "71": "guitar.recorded/71.m4a",
+   "75": "guitar.recorded/75.m4a",
+   "80": "guitar.recorded/80.m4a",
+   "84": "guitar.recorded/84.m4a"
+  },
+  "release": 0.5,
+  "source": "FreePats Spanish Classical Guitar",
+  "type": "notes"
+ },
  "hihat.rock": {
   "layers": [
    [
@@ -88,6 +195,22 @@
   "license": "CC0",
   "source": "Virtuosity Drums (Versilian Studios)",
   "type": "hits"
+ },
+ "horn.recorded": {
+  "license": "CC0",
+  "notes": {
+   "36": "horn.recorded/36.m4a",
+   "39": "horn.recorded/39.m4a",
+   "43": "horn.recorded/43.m4a",
+   "46": "horn.recorded/46.m4a",
+   "50": "horn.recorded/50.m4a",
+   "53": "horn.recorded/53.m4a",
+   "57": "horn.recorded/57.m4a",
+   "60": "horn.recorded/60.m4a"
+  },
+  "release": 0.35,
+  "source": "VSCO 2 Community Edition (Versilian Studios)",
+  "type": "notes"
  },
  "kick.rock": {
   "layers": [
@@ -223,6 +346,25 @@
   "source": "Salamander Grand Piano V3 by Alexander Holm",
   "type": "notes"
  },
+ "recorder.recorded": {
+  "license": "CC0",
+  "notes": {
+   "72": "recorder.recorded/72.m4a",
+   "74": "recorder.recorded/74.m4a",
+   "76": "recorder.recorded/76.m4a",
+   "80": "recorder.recorded/80.m4a",
+   "82": "recorder.recorded/82.m4a",
+   "84": "recorder.recorded/84.m4a",
+   "86": "recorder.recorded/86.m4a",
+   "88": "recorder.recorded/88.m4a",
+   "91": "recorder.recorded/91.m4a",
+   "94": "recorder.recorded/94.m4a",
+   "96": "recorder.recorded/96.m4a"
+  },
+  "release": 0.35,
+  "source": "VCSL, Versilian Community Sample Library (Versilian Studios)",
+  "type": "notes"
+ },
  "ride.rock": {
   "layers": [
    [
@@ -298,6 +440,29 @@
   "source": "Virtuosity Drums (Versilian Studios)",
   "type": "hits"
  },
+ "steelguitar.recorded": {
+  "license": "CC0",
+  "notes": {
+   "40": "steelguitar.recorded/40.m4a",
+   "43": "steelguitar.recorded/43.m4a",
+   "46": "steelguitar.recorded/46.m4a",
+   "49": "steelguitar.recorded/49.m4a",
+   "52": "steelguitar.recorded/52.m4a",
+   "55": "steelguitar.recorded/55.m4a",
+   "58": "steelguitar.recorded/58.m4a",
+   "61": "steelguitar.recorded/61.m4a",
+   "64": "steelguitar.recorded/64.m4a",
+   "68": "steelguitar.recorded/68.m4a",
+   "71": "steelguitar.recorded/71.m4a",
+   "74": "steelguitar.recorded/74.m4a",
+   "80": "steelguitar.recorded/80.m4a",
+   "83": "steelguitar.recorded/83.m4a",
+   "89": "steelguitar.recorded/89.m4a"
+  },
+  "release": 0.5,
+  "source": "Martin HD28 guitar by Jeff Learman (Discord SFZ GM Bank)",
+  "type": "notes"
+ },
  "stomp.recorded": {
   "layers": [
    [
@@ -342,5 +507,61 @@
   "license": "CC0",
   "source": "Virtuosity Drums (Versilian Studios)",
   "type": "hits"
+ },
+ "trombone.recorded": {
+  "license": "CC0",
+  "notes": {
+   "34": "trombone.recorded/34.m4a",
+   "37": "trombone.recorded/37.m4a",
+   "39": "trombone.recorded/39.m4a",
+   "41": "trombone.recorded/41.m4a",
+   "46": "trombone.recorded/46.m4a",
+   "50": "trombone.recorded/50.m4a",
+   "53": "trombone.recorded/53.m4a",
+   "60": "trombone.recorded/60.m4a",
+   "61": "trombone.recorded/61.m4a",
+   "63": "trombone.recorded/63.m4a",
+   "65": "trombone.recorded/65.m4a"
+  },
+  "release": 0.35,
+  "source": "VSCO 2 Community Edition (Versilian Studios)",
+  "type": "notes"
+ },
+ "trumpet.recorded": {
+  "license": "CC0",
+  "notes": {
+   "53": "trumpet.recorded/53.m4a",
+   "57": "trumpet.recorded/57.m4a",
+   "60": "trumpet.recorded/60.m4a",
+   "63": "trumpet.recorded/63.m4a",
+   "67": "trumpet.recorded/67.m4a",
+   "70": "trumpet.recorded/70.m4a",
+   "74": "trumpet.recorded/74.m4a",
+   "77": "trumpet.recorded/77.m4a",
+   "81": "trumpet.recorded/81.m4a",
+   "84": "trumpet.recorded/84.m4a"
+  },
+  "release": 0.35,
+  "source": "VSCO 2 Community Edition (Versilian Studios)",
+  "type": "notes"
+ },
+ "violin.recorded": {
+  "license": "CC0",
+  "notes": {
+   "55": "violin.recorded/55.m4a",
+   "57": "violin.recorded/57.m4a",
+   "64": "violin.recorded/64.m4a",
+   "67": "violin.recorded/67.m4a",
+   "72": "violin.recorded/72.m4a",
+   "76": "violin.recorded/76.m4a",
+   "79": "violin.recorded/79.m4a",
+   "84": "violin.recorded/84.m4a",
+   "88": "violin.recorded/88.m4a",
+   "93": "violin.recorded/93.m4a",
+   "96": "violin.recorded/96.m4a"
+  },
+  "release": 0.35,
+  "source": "VSCO 2 Community Edition (Versilian Studios)",
+  "type": "notes"
  }
 }
