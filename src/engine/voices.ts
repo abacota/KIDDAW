@@ -7,6 +7,7 @@
 
 import * as Tone from 'tone';
 import { SOUND_CHOICES } from '../settings/sounds';
+import { BEEPBOX_RECIPES, parseRecipe, RECIPE_PREFIX, recipeVoice } from './beepbox';
 import { loadSampleSet, readySampleSet, SAMPLE_SETS, type LoadedHits, type LoadedNotes } from './samples';
 
 export interface Voice {
@@ -511,6 +512,7 @@ const LEVEL_DB: Record<string, number> = {
   'horn.recorded': -3.7, 'horn.synth': -3.6,
   'trombone.recorded': 0.0, 'trombone.synth': 14.5,
   'xylophone.synth': 4.7,
+  'chip.beepbox': 0.6, 'lead.beepbox': 0.9, 'pad.beepbox': -3.8, 'bass.beepbox': -0.7,
   'chip.synth': 4.7,
   'lead.synth': 15.7,
   'pad.synth': 12.8,
@@ -518,6 +520,9 @@ const LEVEL_DB: Record<string, number> = {
   'bell.synth': 7.6,
   'bass.synth': 10.6,
 };
+
+/** Level for every sound made from a recipe (the BeepBox-style controls), measured like the rest. */
+const RECIPE_LEVEL_DB = 4.5;
 
 /** Resolves once a sound's recording has downloaded (right away if it has none). Gives up after a few seconds. */
 export function waitForSound(id: string): Promise<void> {
@@ -531,6 +536,9 @@ export function waitForSound(id: string): Promise<void> {
 export function createVoice(id: string): Voice {
   const soundId = id.split('.')[0];
   const version = versionOf(id);
+  if (id.startsWith(RECIPE_PREFIX)) return withLevel(recipeVoice(parseRecipe(JSON.parse(id.slice(RECIPE_PREFIX.length)))), RECIPE_LEVEL_DB);
+  const recipe = BEEPBOX_RECIPES[version];
+  if (recipe) return withLevel(recipeVoice(recipe), RECIPE_LEVEL_DB + (LEVEL_DB[version] ?? 0));
   const set = SAMPLE_SETS[version];
   const synthDb = LEVEL_DB[`${soundId}.synth`] ?? 0;
   if (!set) return withLevel(synthVoice(soundId), synthDb);

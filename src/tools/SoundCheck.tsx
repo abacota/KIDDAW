@@ -9,6 +9,7 @@ import { SAMPLE_SETS } from '../engine/samples';
 import { preloadSound, versionOf } from '../engine/voices';
 import { variantsOf } from '../settings/sounds';
 import { soundById } from '../song/sounds';
+import { SoundMaker } from './SoundMaker';
 import { TICKS_PER_BEAT as BEAT } from '../song/song';
 
 const E = BEAT / 2;
@@ -49,7 +50,10 @@ const HOME_NOTE: Record<string, number> = {
 };
 
 const BASS_LINES = new Set(['doublebass', 'ebass', 'bass']);
-const SYNTH_IS_A_CHOICE = new Set(['kick', 'snare', 'hihat', 'openhat', 'tom', 'lowtom', 'crash', 'ride', 'stomp', 'pat', 'clap', 'snap', 'chest', 'piano']);
+const SYNTH_IS_A_CHOICE = new Set([
+  'kick', 'snare', 'hihat', 'openhat', 'tom', 'lowtom', 'crash', 'ride', 'stomp', 'pat', 'clap', 'snap', 'chest', 'piano',
+  'chip', 'lead', 'pad', 'pluck', 'bell', 'bass',
+]);
 const STRUMMED = new Set(['guitar', 'steelguitar']);
 
 /** A short phrase that suits the instrument: a melody, a bass line, a strum or a held chord. */
@@ -98,6 +102,7 @@ const VERSION_NAMES: Record<string, string> = {
   studio: 'Studio kit',
   rock: 'Rock kit',
   recorded: 'Recorded',
+  beepbox: 'BeepBox style',
   salamander: 'Grand piano',
   synth: 'Synth',
 };
@@ -154,7 +159,9 @@ export function SoundCheck() {
     }
   };
 
-  const credits = Object.values(SAMPLE_SETS).reduce<Record<string, string>>((all, set) => ({ ...all, [set.source]: set.license }), {});
+  const credits = Object.values(SAMPLE_SETS).reduce<Record<string, string>>((all, set) => ({ ...all, [set.source]: set.license }), {
+    'BeepBox-style synths: waveforms and presets from BeepBox by John Nesky and contributing authors': 'MIT',
+  });
 
   return (
     <div className="min-h-screen bg-amber-50 text-slate-900">
@@ -230,6 +237,8 @@ export function SoundCheck() {
             </div>
           </section>
         ))}
+
+        <SoundMaker />
 
         <section className="rounded-3xl bg-white p-5 shadow-sm">
           <h2 className="mb-2 text-xl font-black">Your picks</h2>

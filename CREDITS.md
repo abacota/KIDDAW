@@ -22,3 +22,10 @@ out of tune were retuned, and a note whose pitch didn't match its file name was 
 
 The CC BY sources must keep their credit wherever KIDDAW lists credits. The Sound check page
 (`/sound-check`) shows them too.
+
+## Code
+
+| What | Source | License |
+|---|---|---|
+| BeepBox-style synths and the Make a sound controls (waveforms, unison and vibrato settings, four presets) | [BeepBox](https://github.com/johnnesky/beepbox) by John Nesky and contributing authors | MIT (notice kept in `src/engine/beepbox.ts`) |
+| Sound engine | [Tone.js](https://github.com/Tonejs/Tone.js) | MIT |
