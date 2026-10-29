@@ -29,3 +29,4 @@ The CC BY sources must keep their credit wherever KIDDAW lists credits. The Soun
 |---|---|---|
 | BeepBox-style synths and the Make a sound controls (waveforms, unison and vibrato settings, four presets) | [BeepBox](https://github.com/johnnesky/beepbox) by John Nesky and contributing authors | MIT (notice kept in `src/engine/beepbox.ts`) |
 | Sound engine | [Tone.js](https://github.com/Tonejs/Tone.js) | MIT |
+| Standard notation (Show notes) | [abcjs](https://github.com/paulrosen/abcjs) by Paul Rosen and Gregory Dyke | MIT |

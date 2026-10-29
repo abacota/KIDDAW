@@ -5,6 +5,9 @@
 
 import { FIGURE_INFO, type Figure } from '../song/rhythm';
 
+/** Smaller letters when three or four syllables share one beat, so they don't run together. */
+const SYLLABLE_SIZE: Record<number, number> = { 3: 12, 4: 10 };
+
 /** Which stems a second beam joins, for figures with sixteenths. */
 const SECOND_BEAMS: Partial<Record<Figure, [number, number]>> = {
   'ta-ka-ti-ki': [0, 3],
@@ -52,7 +55,7 @@ export function Sticks({ figure, showSyllables = true, className = '' }: { figur
       )}
       {showSyllables &&
         info.syllables.map((s, i) => (
-          <text key={i} x={syllableXs[i]} y={height - 3} textAnchor="middle" fontSize={15} fontWeight={800} fill="currentColor">
+          <text key={i} x={syllableXs[i]} y={height - 3} textAnchor="middle" fontSize={SYLLABLE_SIZE[info.syllables.length] ?? 15} fontWeight={800} fill="currentColor">
             {s}
           </text>
         ))}

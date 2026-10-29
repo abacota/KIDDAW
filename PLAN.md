@@ -215,6 +215,7 @@ The old version stays in GitHub's history, and the live site keeps showing it un
 - [x] Auto-save
 - [ ] My songs, Share link
 - [x] Level links (kiddaw.vercel.app/k-1 and so on), and a page of links for Adam
+- [x] Show notes: from 2-3 up, the beat in standard notation with the syllables underneath (abcjs)
 - [ ] Projector mode
 - **Done when:** a class makes beats on Chromebooks, comes back to them the next week, and Adam plays one on the projector.
 
@@ -238,6 +239,7 @@ The old version stays in GitHub's history, and the live site keeps showing it un
 
 ### Phase 5: The top of every ladder
 - [ ] Timbre steps 3-5: shaping sounds, effects, recording your own sound, designing a sound
+      (started: the Make a sound controls on the Sound check page, built from BeepBox, in kid words)
 - [ ] The Studio steps of every element
 - [ ] Download my song as audio
 - **Done when:** Adam makes a finished song he'd happily play for another music teacher, using only the tools students see.

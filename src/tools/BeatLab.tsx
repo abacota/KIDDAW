@@ -6,7 +6,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { engine } from '../engine/engine';
 import { browserStorage, createShelf } from '../saving/shelf';
-import type { Level } from '../settings/levels';
+import { LEVELS, type Level } from '../settings/levels';
 import {
   addBeatRow,
   beatCount,
@@ -23,6 +23,7 @@ import {
 import { FIGURE_INFO, readBeats, type Cell, type Figure } from '../song/rhythm';
 import { KITS, soundById, soundsInKit } from '../song/sounds';
 import { TICKS_PER_BEAT, type Song } from '../song/song';
+import { StaffView } from './StaffView';
 import { Sticks } from './Sticks';
 import { useEngineState, usePlayhead } from './useEngine';
 
@@ -61,6 +62,9 @@ export function BeatLab({ level }: { level: Level }) {
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
   const [hint, setHint] = useState('');
   const [nameDraft, setNameDraft] = useState<string | null>(null);
+  const [showNotes, setShowNotes] = useState(false);
+  // Standard notation opens after K-1, once students are ready to read it.
+  const readsNotation = LEVELS.levels.indexOf(level) > 0;
   const { status } = useEngineState();
   const playing = status === 'playing';
   const tick = usePlayhead(playing);
@@ -174,6 +178,18 @@ export function BeatLab({ level }: { level: Level }) {
             </button>
           ))}
         </div>
+        {readsNotation && (
+          <button
+            onClick={() => setShowNotes(n => !n)}
+            aria-pressed={showNotes}
+            className={
+              'flex h-12 items-center gap-2 rounded-full px-5 font-bold shadow-sm transition active:scale-95 ' +
+              (showNotes ? 'bg-slate-900 text-white' : 'bg-white hover:bg-amber-100')
+            }
+          >
+            🎼 {showNotes ? 'Hide notes' : 'Show notes'}
+          </button>
+        )}
       </div>
 
       <main className="px-4 pb-44 sm:px-6">
@@ -294,6 +310,7 @@ export function BeatLab({ level }: { level: Level }) {
               ))}
             </div>
           )}
+          {readsNotation && showNotes && <StaffView song={song} />}
         </div>
       </main>
 
